@@ -12,6 +12,10 @@ Kotlin 공식 코딩 컨벤션을 기본으로 하고, 겹치는 부분은 이 �
 
 - 소스는 `src/main/kotlin/com/arca/` 아래에 두고, 패키지 구조는 `project-structure.md`를 따른다
 - 파일 하나에 최상위 클래스 하나를 두고, 파일명은 클래스명과 같게 하라
+- 클래스 안에 클래스를 중첩하지 마라. 바깥 클래스에서만 쓰는 작은 타입이어도 별도 파일의 최상위 클래스로 둔다
+  - JSON이 여러 단계인 DTO도 단계마다 파일을 나눈다 (`ErrorResponse`, `ErrorDetail`)
+  - `companion object`는 중첩 클래스가 아니다
+  - 나누면 오히려 읽기 어려워지는 경우에만 중첩하고, 먼저 사용자에게 알려라
 
 ## 레이어 구조
 
@@ -42,6 +46,8 @@ Controller → Service → Repository 순서를 따른다 (Facade 레이어 없�
   - 단 `ExceptionCode` 타입 자체를 참조할 때(파라미터 타입 등)는 타입을 import한다 (예: `GlobalExceptionHandler`)
 - 와일드카드 import(`*`)를 쓰지 마라
 - 비즈니스 검증에 `require()`/`check()`를 쓰지 마라. 이들이 던지는 `IllegalArgumentException`/`IllegalStateException`은 `GlobalExceptionHandler`에서 `500 INTERNAL_ERROR`로 떨어진다
+  - 요청 값과 무관하게 코드를 잘못 짠 경우만 잡는 검사에는 `check()`를 쓴다 (`RestApiException`의 code와 recovery 짝 검사). 이 실패는 서버 버그이므로 500이 맞다
+  - `recovery`가 필수인 code를 `recovery` 없이, 또는 다른 kind로 던지면 `RestApiException` 생성에서 실패한다. code별 kind는 `ExceptionCode.exceptionRecoveryKind`에 있다
 
 ```kotlin
 val member = memberRepository.findByIdOrNull(memberId)
@@ -83,6 +89,7 @@ Lombok을 쓰지 마라. 아래처럼 Kotlin 문법으로 대신한다.
 
 - 매직넘버, 매직스트링을 코드에 직접 쓰지 말고 상수로 선언하라
 - 상수는 `companion object` 안에 `private const val`로 선언하라. `object`면 그 본문에 둔다
+  - 두 클래스가 같은 값을 맞춰 써야 하면 값을 정하는 쪽에 `const val`로 공개하고 다른 쪽이 import한다 (`RequestIdFilter.REQUEST_ID_ATTRIBUTE`). 같은 문자열을 양쪽에 따로 두지 마라
   - 파일 최상단(클래스 선언 밖)에 두지 마라. 파일을 열었을 때 클래스 선언이 먼저 보여야 한다
   - enum이면 companion 안에서 항목을 이름만으로 참조할 수 있다
 - `const`가 불가능한 타입(`DateTimeFormatter`, 컬렉션)은 `private val`로 선언하라
@@ -160,22 +167,51 @@ return PostsResponse.of(...)
 - API 경로는 `/v1` 아래에 kebab-case로 작성하라. 리소스 이름과 단복수는 API 계약을 그대로 따른다 (`/v1/passenger`, `/v1/answers`, `/v1/answer-write-commands`)
 - 연속된 대문자를 쓰지 마라 (`lastSemesterGPA` 대신 `lastSemesterGpa`, `userID` 대신 `userId`)
 
+### 클래스 타입 변수는 타입명을 그대로 써라
+
+타입이 클래스나 enum인 프로퍼티, 파라미터, 지역 변수의 이름은 타입명을 줄이지 않고 camelCase로 옮겨 쓴다.
+`exception`과 `recovery`처럼 타입명의 일부만 잘라 쓰지 마라.
+
+```kotlin
+// 지양
+val code: ExceptionCode
+val recovery: ExceptionRecovery?
+val status: HttpStatus
+@Auth session: AuthSession
+
+// 지향
+val exceptionCode: ExceptionCode
+val exceptionRecovery: ExceptionRecovery?
+val httpStatus: HttpStatus
+@Auth authSession: AuthSession
+```
+
+- 프레임워크 타입과 override한 함수의 파라미터도 같다 (`httpServletRequest: HttpServletRequest`, `corsRegistry: CorsRegistry`)
+- 값 타입(`String`, 숫자, `Boolean`, 날짜와 시간, 컬렉션)은 대상이 아니다. 역할을 드러내는 이름을 쓴다 (`title: String`, `createdAt: Instant`)
+- 같은 타입의 변수가 한 범위에 둘 이상이면 타입명 앞에 수식어를 붙여 구분한다 (`sourcePost: Post`, `targetPost: Post`)
+
+예외는 둘이다.
+
+1. **Request, Response DTO는 `request`, `response`로 줄여 쓴다.** 타입명이 길어 그대로 옮기면 읽기 어렵다 (`request: CreatePostRequest`)
+2. **API 계약이 정한 DTO 프로퍼티명은 계약을 따른다.** 계약이 `error.code`, `error.category`로 정했으면 `ErrorResponse`의 프로퍼티는 `code`, `category`다 (`dto.md`)
+
 ### 필드명에 클래스명을 반복하지 마라
 
 `Post.postTitle`은 `post.postTitle`처럼 같은 말을 두 번 하게 만든다.
 소속이 이미 타입으로 드러나므로 필드명에서 뺀다.
+대상은 값 타입 필드다. 타입이 클래스나 enum인 필드는 위 규칙대로 타입명을 그대로 쓴다.
 
 ```kotlin
 // 지양
 class Post {
     var postTitle: String
-    var postStatus: PostStatus
+    var status: PostStatus
 }
 
 // 지향
 class Post {
     var title: String
-    var status: PostStatus
+    var postStatus: PostStatus
 }
 ```
 
@@ -189,13 +225,13 @@ class Post {
 
 ### enum 타입명은 도메인 접두사를 유지하라
 
-필드명과 반대로, **타입명에서는 접두사를 뺄 수 없다.**
+**타입명에서는 접두사를 뺄 수 없다.**
 `PostStatus`(게시글 상태)와 `MemberStatus`(회원 상태)처럼 도메인별로 같은 개념이 공존해서
 접두사가 없으면 이름이 충돌한다.
 
 ```kotlin
-var status: PostStatus     // 타입은 PostStatus, 필드는 status
-var status: MemberStatus
+var postStatus: PostStatus
+var memberStatus: MemberStatus
 ```
 
 ## 주석

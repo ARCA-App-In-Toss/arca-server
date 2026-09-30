@@ -46,7 +46,7 @@ Kotlin 문법(배열 인자 `[...]`, 중첩 어노테이션 `@` 생략, `::class
 
 ### 파라미터
 
-- 인증 파라미터 `@Auth session: AuthSession`은 Docs 인터페이스에도 동일하게 선언하라
+- 인증 파라미터 `@Auth authSession: AuthSession`은 Docs 인터페이스에도 동일하게 선언하라
 
 ## DTO @Schema
 
@@ -97,7 +97,7 @@ interface {Controller}Docs {
         )
     )
     fun methodName(
-        @Auth session: AuthSession,
+        @Auth authSession: AuthSession,
     ): ResponseEntity<{ResponseType}>
 }
 ```

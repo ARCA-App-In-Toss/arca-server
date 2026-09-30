@@ -12,7 +12,7 @@ paths:
 - 기본 경로는 `@RequestMapping("/v1/{리소스}")`으로 설정하라. 리소스 이름은 API 계약의 경로를 그대로 쓴다 (`/v1/passenger`, `/v1/answers`)
 - Docs 인터페이스의 함수는 `override fun`으로 구현하라
 - Controller에 비즈니스 로직을 넣지 마라. Service에 위임만 하라
-- 인증된 세션은 커스텀 `@Auth` 어노테이션으로 주입받아라 (`@Auth session: AuthSession`). 세션은 mode, 승객, data generation을 담는다
+- 인증된 세션은 커스텀 `@Auth` 어노테이션으로 주입받아라 (`@Auth authSession: AuthSession`). 세션은 mode, 승객, data generation을 담는다
 - 엔드포인트가 허용하는 세션 mode는 계약에 정해져 있다. 허용 밖의 mode는 `403 SESSION_SCOPE_INSUFFICIENT`다
 - RequestParam 검증이 필요하면 커스텀 검증 어노테이션(길이 제한, enum 값 검증)을 `global/annotation/`에 두고 사용하라
 - `required = false`인 `@RequestParam`, `@RequestHeader`는 nullable 타입으로 받아라
@@ -46,18 +46,18 @@ class PostController(
 
     @GetMapping
     override fun getMyPosts(
-        @Auth session: AuthSession,
+        @Auth authSession: AuthSession,
     ): ResponseEntity<PostsResponse> {
-        val response = postService.getMyPosts(session)
+        val response = postService.getMyPosts(authSession)
         return ResponseEntity.status(OK).body(response)
     }
 
     @DeleteMapping("/{postId}")
     override fun deletePost(
-        @Auth session: AuthSession,
+        @Auth authSession: AuthSession,
         @PathVariable postId: Long,
     ): ResponseEntity<Void> {
-        postService.deletePost(session, postId)
+        postService.deletePost(authSession, postId)
         return ResponseEntity.status(NO_CONTENT).build()
     }
 }
@@ -98,7 +98,7 @@ class PostController(
     )
 )
 fun deletePost(
-    @Auth session: AuthSession,
+    @Auth authSession: AuthSession,
     @PathVariable postId: Long,
 ): ResponseEntity<Void>
 ```
