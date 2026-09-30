@@ -1,0 +1,29 @@
+package com.arca.global.config
+
+import org.springframework.context.annotation.Configuration
+import org.springframework.http.HttpHeaders.AUTHORIZATION
+import org.springframework.http.HttpHeaders.CONTENT_TYPE
+import org.springframework.http.HttpHeaders.RETRY_AFTER
+import org.springframework.web.servlet.config.annotation.CorsRegistry
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
+
+@Configuration
+class CorsConfig(
+    private val corsProperties: CorsProperties,
+) : WebMvcConfigurer {
+
+    override fun addCorsMappings(registry: CorsRegistry) {
+        registry.addMapping(PATH_PATTERN)
+            .allowedOrigins(*corsProperties.allowedOrigins.toTypedArray())
+            .allowedMethods(*ALLOWED_METHODS)
+            .allowedHeaders(AUTHORIZATION, CONTENT_TYPE, IDEMPOTENCY_KEY)
+            .exposedHeaders(RETRY_AFTER)
+            .allowCredentials(false)
+    }
+
+    companion object {
+        private const val PATH_PATTERN = "/v1/**"
+        private const val IDEMPOTENCY_KEY = "Idempotency-Key"
+        private val ALLOWED_METHODS = arrayOf("GET", "POST", "PUT")
+    }
+}

@@ -22,6 +22,7 @@ description: 시크릿 네이밍 규칙과 발급, 교체 절차
 |---|---|---|
 | DB 접속 URL | `DATABASE_URL` | `spring.datasource.url` |
 | DB 계정 | `DATABASE_USERNAME`, `DATABASE_PASSWORD` | `spring.datasource.username` / `.password` |
+| CORS 허용 origin (콤마로 구분) | `CORS_ALLOWED_ORIGINS` | `cors.allowed-origins` |
 
 시크릿을 추가, 삭제할 때마다 이 표를 같은 작업에서 고친다.
 쓰이지 않는 시크릿을 남겨두지 마라. 유출 시 피해 범위만 넓히고, 어떤 값이 살아있는지 판단을 흐린다.

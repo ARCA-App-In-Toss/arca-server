@@ -16,3 +16,7 @@ spring:
       hibernate:
         format_sql: true
     show-sql: true
+
+cors:
+  allowed-origins:
+    - http://localhost:5173
