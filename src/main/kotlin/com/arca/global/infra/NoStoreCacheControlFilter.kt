@@ -14,12 +14,12 @@ import org.springframework.web.filter.OncePerRequestFilter
 class NoStoreCacheControlFilter : OncePerRequestFilter() {
 
     override fun doFilterInternal(
-        request: HttpServletRequest,
-        response: HttpServletResponse,
+        httpServletRequest: HttpServletRequest,
+        httpServletResponse: HttpServletResponse,
         filterChain: FilterChain,
     ) {
-        response.setHeader(CACHE_CONTROL, NO_STORE)
-        filterChain.doFilter(request, response)
+        httpServletResponse.setHeader(CACHE_CONTROL, NO_STORE)
+        filterChain.doFilter(httpServletRequest, httpServletResponse)
     }
 
     override fun shouldNotFilterErrorDispatch(): Boolean {

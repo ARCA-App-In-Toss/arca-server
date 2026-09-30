@@ -12,8 +12,8 @@ class CorsConfig(
     private val corsProperties: CorsProperties,
 ) : WebMvcConfigurer {
 
-    override fun addCorsMappings(registry: CorsRegistry) {
-        registry.addMapping(PATH_PATTERN)
+    override fun addCorsMappings(corsRegistry: CorsRegistry) {
+        corsRegistry.addMapping(PATH_PATTERN)
             .allowedOrigins(*corsProperties.allowedOrigins.toTypedArray())
             .allowedMethods(*ALLOWED_METHODS)
             .allowedHeaders(AUTHORIZATION, CONTENT_TYPE, IDEMPOTENCY_KEY)
