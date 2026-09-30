@@ -36,3 +36,8 @@ out/
 
 ### OS Files ###
 .DS_Store
+
+### Claude Code ###
+CLAUDE.md
+!.claude/CLAUDE.md
+.claude/settings.local.json
