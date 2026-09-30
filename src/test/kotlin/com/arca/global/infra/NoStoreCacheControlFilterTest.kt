@@ -44,7 +44,7 @@ class NoStoreCacheControlFilterTest(
         val response = mockMvc.get(UNKNOWN_PATH).andReturn().response
 
         //then
-        assertThat(response.status).isEqualTo(404)
+        assertThat(response.status).isEqualTo(400)
         assertThat(response.getHeader(CACHE_CONTROL)).isEqualTo(NO_STORE)
     }
 

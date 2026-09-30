@@ -20,3 +20,7 @@ spring:
 cors:
   allowed-origins:
     - http://localhost:5173
+
+logging:
+  pattern:
+    correlation: "[%X{requestId}] "
