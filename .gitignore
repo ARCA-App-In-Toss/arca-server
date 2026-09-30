@@ -41,3 +41,6 @@ out/
 CLAUDE.md
 !.claude/CLAUDE.md
 .claude/settings.local.json
+
+### Docs ###
+docs/

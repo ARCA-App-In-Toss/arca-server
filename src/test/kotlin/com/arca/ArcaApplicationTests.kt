@@ -1,9 +1,9 @@
 package com.arca
 
+import com.arca.global.infra.IntegrationTest
 import org.junit.jupiter.api.Test
-import org.springframework.boot.test.context.SpringBootTest
 
-@SpringBootTest
+@IntegrationTest
 class ArcaApplicationTests {
 
     @Test
