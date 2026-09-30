@@ -1,10 +1,10 @@
-package arca.arcaserver
+package com.arca
 
 import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest
 
 @SpringBootTest
-class ArcaServerApplicationTests {
+class ArcaApplicationTests {
 
     @Test
     fun contextLoads() {
