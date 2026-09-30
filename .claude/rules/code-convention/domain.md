@@ -16,6 +16,7 @@ paths:
   - `create()`는 값을 개별 파라미터로 받는다. 파라미터가 많아도 파라미터 객체로 묶지 않는다 (호출은 이름 붙인 인자라 위치가 섞이지 않는다)
 - 주 생성자 파라미터는 프로퍼티(`val`/`var`)로 선언하지 말고 값만 받아라. 영속 필드는 클래스 본문에 선언한다 (생성자 프로퍼티에는 `protected set`을 지정할 수 없다)
 - `createdAt` 등 시각 필드는 각 Entity에서 직접 관리하라 (공통 `BaseEntity` 없음)
+- 시각은 `Instant`로 선언하라. `LocalDateTime`을 쓰지 마라. KST 날짜 자체가 값인 필드(`createdDateKst` 등)는 `LocalDate`다
 - 검증 로직은 Entity 내부 private 함수로 구현하라
 
 ## 영속 필드
@@ -50,7 +51,7 @@ class Post private constructor(
         protected set
 
     @Column(nullable = false, name = "created_at")
-    var createdAt: LocalDateTime = LocalDateTime.now()
+    var createdAt: Instant = Instant.now()
         protected set
 
     companion object {
@@ -100,7 +101,7 @@ enum class PostStatus(
         }
 
         fun fromCode(code: String): PostStatus {
-            return tryFromCode(code) ?: throw RestApiException(INVALID_ENUM_TYPE)
+            return tryFromCode(code) ?: throw RestApiException(INVALID_REQUEST)
         }
     }
 }

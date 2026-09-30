@@ -23,22 +23,25 @@ Controller → Service → Repository 순서를 따른다 (Facade 레이어 없�
 - 기본은 `val`이다. 값이 바뀌어야 할 때만 `var`를 써라
 - 타입은 non-null로 선언하고, null이 의미 있는 상태일 때만 `?`를 붙여라
 - `!!`를 쓰지 마라. null을 예외로 바꿀 때는 `?: throw`를 쓴다
-  - 예외: Bean Validation을 통과한 Request DTO 필드 (`dto.md`)
 - Java API가 돌려주는 값(플랫폼 타입)은 받는 변수나 반환 타입에 nullability를 명시해 확정하라
 
 ## 예외 처리
 
 - `throw RestApiException(XXX)` 패턴을 사용하라
-- 새 에러코드는 `ExceptionCode` enum에 추가하되, 카테고리별 주석 그룹을 유지하라
-- 코드 값은 `{도메인 접두사}-{세 자리 순번}` 문자열이다 (`GLB-001`, `AUTH-001`, `MEM-001`). 새 코드는 속한 그룹의 마지막 순번 +1을 쓴다
-  - 도메인이 새로 생기면 대문자 3~4자 접두사를 정하고 `ExceptionCode`에 주석 그룹을 추가한다
-- 여러 도메인이 함께 던지는 코드는 검증 대상의 도메인에 둬라
-- 메시지는 "-요"체로 쓴다 (`찾을 수 없습니다.`가 아니라 `찾을 수 없어요.`)
+- 에러 코드는 프론트와 합의한 API 계약의 닫힌 목록이다. `ExceptionCode` enum 상수명이 곧 응답의 `code` 값이다 (`SESSION_INVALID`, `ANSWER_NOT_FOUND`)
+  - 계약에 없는 코드를 임의로 추가하지 마라. 필요하면 먼저 사용자에게 알리고 계약 변경으로 다룬다
+- `ExceptionCode` 항목은 HTTP 상태와 category(`VALIDATION`, `AUTH`, `CONFLICT`, `RATE_LIMIT`, `MAINTENANCE`)를 가진다. code별 조합은 계약에 고정돼 있다
+- `ExceptionCode`는 category별 주석 그룹을 유지하라 (`// 인증 (AUTH)`)
+- 에러 응답은 `{"error": {"code", "category", "requestId"}}` 형태다. `message`, `details`, stack 같은 자유 형식 필드를 넣지 마라. 사용자에게 보일 문구는 클라이언트가 code로 정한다
+  - `recovery`는 계약이 정한 code에만 붙인다. 런타임 값(`ticketId`, 정책 목록)이 필요하면 `RestApiException`에 실어 던진다
+  - `retryAfterSeconds`는 `RATE_LIMITED`, `MAINTENANCE`에만 붙이고 `Retry-After` 헤더와 같은 값을 쓴다
+- 요청 형식 오류(JSON 파싱, 필수 필드 누락, 타입 불일치, 추가 필드, Bean Validation 실패)는 모두 `400 INVALID_REQUEST`다
+- command가 적용되지 않은 결과(`NOT_APPLIED`)는 예외가 아니다. `200` 응답 body의 `state`와 `error`로 반환하라
 - `ExceptionCode` 항목은 개별 import로 식별자만 노출하라 (`ExceptionCode.XXX` 표기 대신 `XXX`)
   (`import com.arca.global.exception.domain.ExceptionCode.MEMBER_NOT_FOUND`)
   - 단 `ExceptionCode` 타입 자체를 참조할 때(파라미터 타입 등)는 타입을 import한다 (예: `GlobalExceptionHandler`)
 - 와일드카드 import(`*`)를 쓰지 마라
-- 비즈니스 검증에 `require()`/`check()`를 쓰지 마라. 이들이 던지는 `IllegalArgumentException`/`IllegalStateException`은 `GlobalExceptionHandler`에서 500으로 떨어진다
+- 비즈니스 검증에 `require()`/`check()`를 쓰지 마라. 이들이 던지는 `IllegalArgumentException`/`IllegalStateException`은 `GlobalExceptionHandler`에서 `500 INTERNAL_ERROR`로 떨어진다
 
 ```kotlin
 val member = memberRepository.findByIdOrNull(memberId)
@@ -118,7 +121,7 @@ class PostService(
 class AuthService(
     private val memberRepository: MemberRepository,
 
-    private val jwtProvider: JwtProvider,
+    private val tokenGenerator: TokenGenerator,
     private val passwordEncoder: PasswordEncoder,
 )
 ```
@@ -154,7 +157,7 @@ return PostsResponse.of(...)
 - 패키지는 도메인 단위로 나눠라
 - 클래스는 PascalCase로 작성하라 (`MemberService`, `PostController`)
 - 함수는 camelCase + CRUD 동사를 사용하라 (`findByMemberId`, `createPost`, `deletePost`)
-- API 경로는 kebab-case 복수형으로 작성하라 (`/api/v1/members`, `/api/v1/posts`)
+- API 경로는 `/v1` 아래에 kebab-case로 작성하라. 리소스 이름과 단복수는 API 계약을 그대로 따른다 (`/v1/passenger`, `/v1/answers`, `/v1/answer-write-commands`)
 - 연속된 대문자를 쓰지 마라 (`lastSemesterGPA` 대신 `lastSemesterGpa`, `userID` 대신 `userId`)
 
 ### 필드명에 클래스명을 반복하지 마라
@@ -178,10 +181,11 @@ class Post {
 
 응답 DTO도 같다. `PostResponse`가 표현하는 대상이 게시글이므로 `postTitle`이 아니라 `title`이다.
 
-예외는 둘뿐이다.
+예외는 셋이다.
 
 1. **다른 엔티티에서 온 값은 출처를 밝힌다.** `PostResponse.memberNickname`은 게시글이 아니라 회원의 값이다
 2. **같은 종류의 필드가 둘 이상이면 수식어를 남긴다.** 코드가 둘(내부 코드, 외부 연동 코드)이면 한쪽만 `code`로 줄였을 때 어느 쪽인지 알 수 없다
+3. **API 계약이 정한 DTO 필드명은 계약을 따른다.** 계약이 `PassengerProfile.passengerCode`, `answerId`로 정했으면 그대로 쓴다 (`dto.md`)
 
 ### enum 타입명은 도메인 접두사를 유지하라
 
@@ -197,7 +201,7 @@ var status: MemberStatus
 ## 주석
 
 - 메인 코드에 설명 주석을 달지 마라. 설명이 필요하다고 느끼면 주석 대신 이름과 구조로 드러내라
-- 유지하는 예외: `ExceptionCode`의 카테고리 그룹 주석(`// 회원 (MEM)`)처럼 나열을 구획하는 용도의 주석
+- 유지하는 예외: `ExceptionCode`의 카테고리 그룹 주석(`// 인증 (AUTH)`)처럼 나열을 구획하는 용도의 주석
 - 배경과 정책 설명이 필요하면 주석이 아니라 `.claude/spec/service-policy/`의 해당 도메인 파일에 남겨라
 
 ## 로깅
@@ -214,5 +218,5 @@ companion object {
 
 - 의존성은 주 생성자의 `private val` 파라미터로 주입하라. `lateinit var` 필드 주입을 쓰지 마라
 - 스프링 빈 클래스는 `kotlin-spring` 플러그인이 `open`으로 만든다. 직접 `open`을 붙이지 마라
-- `@Value`의 `$`는 문자열 템플릿과 겹치므로 `\$`로 이스케이프하라 (`@Value("\${security.jwt.secret-key}")`)
+- `@Value`의 `$`는 문자열 템플릿과 겹치므로 `\$`로 이스케이프하라 (`@Value("\${cors.allowed-origin}")`)
 - 설정 묶음은 `@ConfigurationProperties` + data class로 선언하라

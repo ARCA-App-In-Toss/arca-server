@@ -9,22 +9,25 @@ paths:
 문서 내용(어노테이션에 무엇을 적는지)은 `.claude/spec/api-docs-convention.md`를 따른다.
 
 - `@RestController` 클래스의 주 생성자로 Service를 주입하고 `{Controller}Docs`를 구현하라
-- 기본 경로는 `@RequestMapping("/api/v1/{도메인복수형}")`으로 설정하라
+- 기본 경로는 `@RequestMapping("/v1/{리소스}")`으로 설정하라. 리소스 이름은 API 계약의 경로를 그대로 쓴다 (`/v1/passenger`, `/v1/answers`)
 - Docs 인터페이스의 함수는 `override fun`으로 구현하라
 - Controller에 비즈니스 로직을 넣지 마라. Service에 위임만 하라
-- 인증된 회원 식별자는 커스텀 `@Auth` 어노테이션으로 주입받아라 (`@Auth memberId: Long`)
+- 인증된 세션은 커스텀 `@Auth` 어노테이션으로 주입받아라 (`@Auth session: AuthSession`). 세션은 mode, 승객, data generation을 담는다
+- 엔드포인트가 허용하는 세션 mode는 계약에 정해져 있다. 허용 밖의 mode는 `403 SESSION_SCOPE_INSUFFICIENT`다
 - RequestParam 검증이 필요하면 커스텀 검증 어노테이션(길이 제한, enum 값 검증)을 `global/annotation/`에 두고 사용하라
 - `required = false`인 `@RequestParam`, `@RequestHeader`는 nullable 타입으로 받아라
 
 ## 요청 이름
 
-- URL에 드러나는 이름(경로, 경로 변수, 쿼리 파라미터, 헤더)은 케밥 케이스로 써라 (`/re-issue`, `{post-id}`, `sort-type`, `access-token`)
-- 경로 변수와 쿼리 파라미터는 Kotlin 파라미터 이름(카멜 케이스)과 다르므로 이름을 명시하라 (`@PathVariable("post-id") postId: Long`)
+- 요청 이름은 API 계약의 표기를 그대로 따른다
+- 경로는 케밥 케이스로 써라 (`/answer-write-commands`)
+- 경로 변수와 쿼리 파라미터는 카멜 케이스다 (`{ticketId}`, `excerptProfile`). Kotlin 파라미터 이름과 같게 짓고 이름을 따로 명시하지 않는다 (`@PathVariable ticketId: String`)
+- 헤더는 HTTP 표기 그대로 쓰고 이름을 명시하라 (`@RequestHeader("Idempotency-Key") idempotencyKey: UUID`)
 
 ## 함수 형식
 
 - 파라미터는 개수와 상관없이 한 줄에 하나씩 쓰고, 마지막 파라미터 뒤에 trailing comma를 붙여라. 파라미터가 없으면 `()`로 쓴다
-- 파라미터 하나에 붙는 어노테이션은 그 파라미터와 같은 줄에 써라 (`@RequestParam("keyword") keyword: String,`)
+- 파라미터 하나에 붙는 어노테이션은 그 파라미터와 같은 줄에 써라 (`@RequestParam keyword: String,`)
 - 본문은 블록(`{ }`)으로 쓰고, 서비스 호출 결과를 `val response`에 담아 바로 다음 줄에서 반환하라. 두 줄 사이에 빈 줄을 넣지 않는다
 - body가 없으면 서비스를 호출한 다음 줄에서 반환하라. 반환 타입은 `ResponseEntity<Void>`다
 
@@ -36,25 +39,25 @@ paths:
 
 ```kotlin
 @RestController
-@RequestMapping("/api/v1/posts")
+@RequestMapping("/v1/posts")
 class PostController(
     private val postService: PostService,
 ) : PostControllerDocs {
 
     @GetMapping
     override fun getMyPosts(
-        @Auth memberId: Long,
+        @Auth session: AuthSession,
     ): ResponseEntity<PostsResponse> {
-        val response = postService.getMyPosts(memberId)
+        val response = postService.getMyPosts(session)
         return ResponseEntity.status(OK).body(response)
     }
 
-    @DeleteMapping("/{post-id}")
+    @DeleteMapping("/{postId}")
     override fun deletePost(
-        @Auth memberId: Long,
-        @PathVariable("post-id") postId: Long,
+        @Auth session: AuthSession,
+        @PathVariable postId: Long,
     ): ResponseEntity<Void> {
-        postService.deletePost(memberId, postId)
+        postService.deletePost(session, postId)
         return ResponseEntity.status(NO_CONTENT).build()
     }
 }
@@ -73,7 +76,7 @@ class PostController(
 @Operation(
     summary = "게시글 삭제",
     description = "내가 작성한 게시글을 삭제합니다.<br>" +
-        "🔐 <strong>Jwt 필요</strong><br>"
+        "🔐 <strong>세션 필요 (ACTIVE)</strong><br>"
 )
 @ApiResponses(
     ApiResponse(responseCode = "204", description = "✅ 게시글 삭제 성공"),
@@ -86,7 +89,7 @@ class PostController(
                 examples = [
                     ExampleObject(
                         name = "게시글 조회 실패",
-                        value = "{\"code\" : \"POST-001\", \"message\" : \"게시글을 찾을 수 없어요.\"}"
+                        value = "{\"error\" : {\"code\" : \"POST_NOT_FOUND\", \"category\" : \"VALIDATION\", \"requestId\" : \"req-example\"}}"
                     )
                 ],
                 schema = Schema(implementation = ErrorResponse::class)
@@ -95,7 +98,7 @@ class PostController(
     )
 )
 fun deletePost(
-    @Auth memberId: Long,
-    @PathVariable("post-id") postId: Long,
+    @Auth session: AuthSession,
+    @PathVariable postId: Long,
 ): ResponseEntity<Void>
 ```

@@ -24,15 +24,19 @@ paths:
 - 주 생성자 프로퍼티에 붙이는 `@Schema`와 validation 어노테이션은 `@field:` 대상을 명시하라 (대상을 적지 않으면 컴파일러 설정에 따라 붙는 자리가 달라진다)
 - `@Schema` 속성이 2개 이상이면 한 줄에 몰아쓰지 말고 속성당 한 줄로 작성하라. 속성이 1개면 한 줄로 써도 된다
 
-## 목록 응답
+## 필드명
 
-- 목록을 감싸는 DTO의 프로퍼티명은 `{단수형}Responses`로 통일하라 (`postResponses`, `commentResponses`)
+- JSON 필드명은 API 계약의 이름을 그대로 써라 (`passengerCode`, `items`, `nextCursor`, `consentPolicies`)
+- 계약과 이 문서의 네이밍 규칙이 어긋나면 계약이 우선이다
 
 ## Request
 
 - `@Schema` + validation 어노테이션(`@NotBlank` 등)을 포함하라
-- 프로퍼티는 nullable로 선언하라. non-null로 두면 필드가 빠진 요청이 validation 전에 역직렬화에서 실패해, `@NotBlank`의 메시지 대신 일반 `INVALID_REQUEST_PARAMETER` 응답이 나간다
-- 검증을 통과한 필드를 꺼낼 때에 한해 `!!`를 허용한다
+- validation 어노테이션에 `message`를 쓰지 마라. 형식 검증 실패는 모두 `400 INVALID_REQUEST`로 나가고, 에러 응답에는 메시지가 담기지 않는다
+- 프로퍼티는 계약의 필수 여부에 맞춰 선언하라. 필수 필드는 non-null, 계약이 `null`을 허용하는 필드만 nullable이다
+  - 필드 누락과 타입 불일치는 역직렬화 단계에서 `INVALID_REQUEST`가 된다
+  - 계약에 없는 추가 필드는 전역 Jackson 설정이 거절한다. DTO에서 따로 처리하지 않는다
+- Bean Validation은 형식 검증(`400`)에만 써라. 계약이 `422`로 정한 값 규칙(닉네임 규칙, 본문 길이 등)은 Service나 도메인에서 `RestApiException`으로 처리하라
 
 ```kotlin
 data class CreatePostRequest(
@@ -40,32 +44,34 @@ data class CreatePostRequest(
         description = "게시글 제목",
         example = "첫 번째 글"
     )
-    @field:NotBlank(message = "제목이 비어있어요.")
-    @field:Size(max = 50, message = "제목은 50자 이하여야 해요.")
-    val title: String?,
+    @field:NotBlank
+    @field:Size(max = 50)
+    val title: String,
 
     @field:Schema(
         description = "게시글 본문",
         example = "본문 내용"
     )
-    @field:NotBlank(message = "본문이 비어있어요.")
-    val content: String?,
+    @field:NotBlank
+    val content: String,
 )
 ```
 
 ## Response
 
-- 프로퍼티는 실제 값에 맞춰 non-null로 선언하라
+- 성공 응답은 wrapper 없이 DTO를 그대로 반환한다 (`{"data": ...}` 금지)
+- 프로퍼티는 실제 값에 맞춰 non-null로 선언하라. 계약이 `T | null`로 정한 필드만 nullable이다
+- 시각은 `Instant`(UTC, `Z`로 끝남), KST 날짜는 `LocalDate`(`YYYY-MM-DD`)로 선언하라. `LocalDateTime`을 쓰지 마라
 - validation 어노테이션을 붙이지 마라. validation은 Request 전용이다
 - 생성은 `companion object`의 `of()` / `from()`으로 하고, 그 안에서 이름 붙인 인자로 생성자를 호출하라
 
 ```kotlin
 data class PostsResponse(
-    val postResponses: List<PostResponse>,
+    val items: List<PostResponse>,
 ) {
     companion object {
-        fun of(postResponses: List<PostResponse>): PostsResponse {
-            return PostsResponse(postResponses = postResponses)
+        fun of(items: List<PostResponse>): PostsResponse {
+            return PostsResponse(items = items)
         }
     }
 }

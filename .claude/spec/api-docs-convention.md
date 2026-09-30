@@ -26,7 +26,7 @@ Kotlin 문법(배열 인자 `[...]`, 중첩 어노테이션 `@` 생략, `::class
 | 어노테이션 | 규칙 | 예시 |
 |---|---|---|
 | `@Operation` summary | 기능을 한 줄로 요약 | `"내 게시글 조회"` |
-| `@Operation` description | 인증 필요 시 `"🔐 <strong>Jwt 필요</strong><br>"` 포함 | - |
+| `@Operation` description | 인증 필요 시 허용 세션 mode를 적는다. `"🔐 <strong>세션 필요 (ACTIVE)</strong><br>"` | - |
 | 파라미터 어노테이션 | Controller 시그니처와 동일하게 선언 | - |
 
 ### 응답 (`@ApiResponses`)
@@ -37,15 +37,16 @@ Kotlin 문법(배열 인자 `[...]`, 중첩 어노테이션 `@` 생략, `::class
 | 실패 | `"🚨 {에러 설명}"` | `schema = Schema(implementation = ErrorResponse::class)` |
 
 - `ExampleObject`의 value는 **실제 응답 본문과 같은 형태**여야 한다.
-  `ErrorResponse`는 `code`(문자열)와 `message` 두 필드를 가지므로 형식은 `{"code" : "MEM-001", "message" : "사용자를 찾을 수 없어요."}`다.
-  - `code`는 `{도메인 접두사}-{세 자리 순번}` 문자열이다. 따옴표를 빼거나 정수로 적지 마라. enum 상수명을 그대로 적지도 마라 (`"MEMBER_NOT_FOUND"`는 실제로 내려가지 않는다)
-  - `code`와 `message`는 `ExceptionCode` enum에 정의된 값을 **그대로** 옮긴다. 문구를 다듬지 마라
+  `ErrorResponse`는 `error` 아래에 `code`, `category`, `requestId`를 가지므로 형식은 `{"error" : {"code" : "ANSWER_NOT_FOUND", "category" : "VALIDATION", "requestId" : "req-example"}}`다.
+  - `code`는 `ExceptionCode` enum 상수명 그대로다. `category`는 그 code에 고정된 값을 옮긴다
+  - `message`를 적지 마라. 에러 응답에 자유 형식 메시지는 없다
+  - `recovery`, `retryAfterSeconds`는 계약이 그 code에 정한 경우에만 적는다
 - `ErrorResponse`는 `com.arca.global.exception.dto.response.ErrorResponse`를 사용하라
 - 선언할 `ApiResponse`는 해당 엔드포인트에서 실제로 발생하는 응답만이다. 500은 선언하지 마라
 
 ### 파라미터
 
-- 인증 파라미터 `@Auth memberId: Long`은 Docs 인터페이스에도 동일하게 선언하라
+- 인증 파라미터 `@Auth session: AuthSession`은 Docs 인터페이스에도 동일하게 선언하라
 
 ## DTO @Schema
 
@@ -74,7 +75,7 @@ interface {Controller}Docs {
     @Operation(
         summary = "{기능 요약}",
         description = "{상세 설명}<br>" +
-            "🔐 <strong>Jwt 필요</strong><br>"
+            "🔐 <strong>세션 필요 ({허용 mode})</strong><br>"
     )
     @ApiResponses(
         ApiResponse(responseCode = "200", description = "✅ {성공 메시지}"),
@@ -87,7 +88,7 @@ interface {Controller}Docs {
                     examples = [
                         ExampleObject(
                             name = "{에러명}",
-                            value = "{\"code\" : \"{코드}\", \"message\" : \"{에러 메시지}\"}"
+                            value = "{\"error\" : {\"code\" : \"{코드}\", \"category\" : \"{카테고리}\", \"requestId\" : \"req-example\"}}"
                         )
                     ],
                     schema = Schema(implementation = ErrorResponse::class)
@@ -96,7 +97,7 @@ interface {Controller}Docs {
         )
     )
     fun methodName(
-        @Auth memberId: Long,
+        @Auth session: AuthSession,
     ): ResponseEntity<{ResponseType}>
 }
 ```
