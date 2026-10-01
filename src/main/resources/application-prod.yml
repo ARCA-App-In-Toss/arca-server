@@ -13,6 +13,11 @@ spring:
     hibernate:
       ddl-auto: validate
 
+  flyway:
+    locations:
+      - classpath:database/migration
+      - classpath:database/seed
+
 cors:
   allowed-origins: ${CORS_ALLOWED_ORIGINS:}
 

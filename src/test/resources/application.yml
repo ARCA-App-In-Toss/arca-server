@@ -11,11 +11,16 @@ spring:
   jpa:
     open-in-view: false
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: validate
     properties:
       hibernate:
         format_sql: true
     show-sql: true
+
+  flyway:
+    locations:
+      - classpath:database/migration
+      - classpath:database/seed
 
 cors:
   allowed-origins:
