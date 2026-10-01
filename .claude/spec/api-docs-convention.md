@@ -97,7 +97,7 @@ interface {Controller}Docs {
         )
     )
     fun methodName(
-        @Auth authSession: AuthSession,
+        @Auth authSession: AuthSession
     ): ResponseEntity<{ResponseType}>
 }
 ```

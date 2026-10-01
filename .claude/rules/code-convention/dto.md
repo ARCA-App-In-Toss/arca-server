@@ -53,7 +53,7 @@ data class CreatePostRequest(
         example = "본문 내용"
     )
     @field:NotBlank
-    val content: String,
+    val content: String
 )
 ```
 
@@ -67,7 +67,7 @@ data class CreatePostRequest(
 
 ```kotlin
 data class PostsResponse(
-    val items: List<PostResponse>,
+    val items: List<PostResponse>
 ) {
     companion object {
         fun of(items: List<PostResponse>): PostsResponse {

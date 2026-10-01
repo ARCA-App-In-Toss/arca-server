@@ -63,11 +63,11 @@ val member = memberRepository.findByIdOrNull(memberId)
 ```kotlin
 fun create(
     member: Member,
-    title: String,
+    title: String
 ): Post {
     return Post(
         member = member,
-        title = title,
+        title = title
     )
 }
 ```
@@ -99,7 +99,7 @@ Lombok을 쓰지 마라. 아래처럼 Kotlin 문법으로 대신한다.
 ```kotlin
 @Service
 class PostService(
-    private val postRepository: PostRepository,
+    private val postRepository: PostRepository
 ) {
     private fun validatePostLimit(posts: List<Post>) {
         if (posts.size >= MAX_POST_COUNT) {
@@ -116,7 +116,8 @@ class PostService(
 ## 포맷팅
 
 - 들여쓰기는 4칸, 그 밖의 형식은 Kotlin 공식 스타일을 따른다
-- 파라미터가 2개 이상인 함수, 생성자 선언은 파라미터마다 줄바꿈하고, 마지막 파라미터 뒤에 trailing comma를 붙여라
+- 파라미터가 2개 이상인 함수, 생성자 선언은 파라미터마다 줄바꿈하라
+- trailing comma를 쓰지 마라. 선언, 호출, 컬렉션, enum 항목 모두 마지막 원소 뒤에 쉼표를 붙이지 않는다
   - Controller와 Docs의 함수는 파라미터가 1개여도 줄바꿈한다 (`controller.md`)
 - 의존성 주입 파라미터는 계층별로 묶고, 그룹 사이를 빈 줄로 나눠라
   - 같은 계층(Repository끼리, Service끼리)은 한 그룹이다. 도메인이 달라도 나누지 않는다. 그룹 안에서는 자기 도메인을 먼저 쓴다
@@ -129,7 +130,7 @@ class AuthService(
     private val memberRepository: MemberRepository,
 
     private val tokenGenerator: TokenGenerator,
-    private val passwordEncoder: PasswordEncoder,
+    private val passwordEncoder: PasswordEncoder
 )
 ```
 
@@ -186,14 +187,16 @@ val httpStatus: HttpStatus
 @Auth authSession: AuthSession
 ```
 
-- 프레임워크 타입과 override한 함수의 파라미터도 같다 (`httpServletRequest: HttpServletRequest`, `corsRegistry: CorsRegistry`)
+- 프레임워크 타입과 override한 함수의 파라미터도 같다 (`corsRegistry: CorsRegistry`, `filterChain: FilterChain`)
 - 값 타입(`String`, 숫자, `Boolean`, 날짜와 시간, 컬렉션)은 대상이 아니다. 역할을 드러내는 이름을 쓴다 (`title: String`, `createdAt: Instant`)
 - 같은 타입의 변수가 한 범위에 둘 이상이면 타입명 앞에 수식어를 붙여 구분한다 (`sourcePost: Post`, `targetPost: Post`)
 
-예외는 둘이다.
+예외는 넷이다.
 
 1. **Request, Response DTO는 `request`, `response`로 줄여 쓴다.** 타입명이 길어 그대로 옮기면 읽기 어렵다 (`request: CreatePostRequest`)
-2. **API 계약이 정한 DTO 프로퍼티명은 계약을 따른다.** 계약이 `error.code`, `error.category`로 정했으면 `ErrorResponse`의 프로퍼티는 `code`, `category`다 (`dto.md`)
+2. **서블릿 요청, 응답 객체도 `request`, `response`로 쓴다.** (`request: HttpServletRequest`, `response: HttpServletResponse`)
+3. **예외 객체는 `e`로 쓴다.** `@ExceptionHandler` 파라미터와 `catch` 블록 모두 같다 (`e: RestApiException`, `catch (e: IOException)`)
+4. **API 계약이 정한 DTO 프로퍼티명은 계약을 따른다.** 계약이 `error.code`, `error.category`로 정했으면 `ErrorResponse`의 프로퍼티는 `code`, `category`다 (`dto.md`)
 
 ### 필드명에 클래스명을 반복하지 마라
 

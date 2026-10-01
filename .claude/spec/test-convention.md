@@ -31,7 +31,7 @@ class PostServiceTest(
     private val postRepository: PostRepository,
     private val memberRepository: MemberRepository,
 
-    private val entityManager: EntityManager,
+    private val entityManager: EntityManager
 )
 ```
 
@@ -94,6 +94,6 @@ FULLTEXT 등 H2가 실행하지 못하는 네이티브 쿼리는 `@MySqlIntegrat
 | 선언 | `object {Domain}Fixture` (예: `PostFixture`, `MemberFixture`) |
 | 생성 방식 | 엔티티의 팩토리(`{Entity}.create(...)`)로 만든다. 팩토리가 받지 않는 값(조회수, 생성 시각처럼 도메인 흐름이 바꾸는 값)만 `ReflectionTestUtils.setField(entity, "필드명", 값)`로 채운다 |
 | 오버로드 | 기본값 세트 + 세부 필드를 받는 팩토리 함수를 함께 제공 (`createPost()`, `createPostWithDetails(...)`) |
-| 호출 | 위치 인자로 호출한다. 공통 규칙의 이름 붙인 인자 규칙은 픽스처 호출에 적용하지 않는다. 여러 줄이면 마지막 인자 뒤에 trailing comma를 붙인다 |
+| 호출 | 위치 인자로 호출한다. 공통 규칙의 이름 붙인 인자 규칙은 픽스처 호출에 적용하지 않는다. 여러 줄이어도 마지막 인자 뒤에 쉼표를 붙이지 않는다 |
 
 - `kotlin-jpa`가 만드는 기본 생성자는 소스에서 부를 수 없다. `BeanUtils.instantiateClass`로 빈 엔티티를 만들지 마라. 필드 초기화가 실행되지 않아 컬렉션과 기본값이 비어 있다

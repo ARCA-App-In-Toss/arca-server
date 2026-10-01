@@ -26,7 +26,7 @@ paths:
 
 ## 함수 형식
 
-- 파라미터는 개수와 상관없이 한 줄에 하나씩 쓰고, 마지막 파라미터 뒤에 trailing comma를 붙여라. 파라미터가 없으면 `()`로 쓴다
+- 파라미터는 개수와 상관없이 한 줄에 하나씩 쓰고, 마지막 파라미터 뒤에 쉼표를 붙이지 않는다. 파라미터가 없으면 `()`로 쓴다
 - 파라미터 하나에 붙는 어노테이션은 그 파라미터와 같은 줄에 써라 (`@RequestParam keyword: String,`)
 - 본문은 블록(`{ }`)으로 쓰고, 서비스 호출 결과를 `val response`에 담아 바로 다음 줄에서 반환하라. 두 줄 사이에 빈 줄을 넣지 않는다
 - body가 없으면 서비스를 호출한 다음 줄에서 반환하라. 반환 타입은 `ResponseEntity<Void>`다
@@ -41,12 +41,12 @@ paths:
 @RestController
 @RequestMapping("/v1/posts")
 class PostController(
-    private val postService: PostService,
+    private val postService: PostService
 ) : PostControllerDocs {
 
     @GetMapping
     override fun getMyPosts(
-        @Auth authSession: AuthSession,
+        @Auth authSession: AuthSession
     ): ResponseEntity<PostsResponse> {
         val response = postService.getMyPosts(authSession)
         return ResponseEntity.status(OK).body(response)
@@ -55,7 +55,7 @@ class PostController(
     @DeleteMapping("/{postId}")
     override fun deletePost(
         @Auth authSession: AuthSession,
-        @PathVariable postId: Long,
+        @PathVariable postId: Long
     ): ResponseEntity<Void> {
         postService.deletePost(authSession, postId)
         return ResponseEntity.status(NO_CONTENT).build()
@@ -99,6 +99,6 @@ class PostController(
 )
 fun deletePost(
     @Auth authSession: AuthSession,
-    @PathVariable postId: Long,
+    @PathVariable postId: Long
 ): ResponseEntity<Void>
 ```
