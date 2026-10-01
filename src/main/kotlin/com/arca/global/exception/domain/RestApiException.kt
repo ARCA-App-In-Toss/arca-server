@@ -6,7 +6,7 @@ import com.arca.global.exception.domain.ExceptionCode.RATE_LIMITED
 class RestApiException(
     val exceptionCode: ExceptionCode,
     val exceptionRecovery: ExceptionRecovery? = null,
-    val retryAfterSeconds: Int? = null,
+    val retryAfterSeconds: Int? = null
 ) : RuntimeException(exceptionCode.name) {
 
     init {

@@ -17,7 +17,7 @@ import org.springframework.http.HttpStatus.UNPROCESSABLE_ENTITY
 enum class ExceptionCode(
     val httpStatus: HttpStatus,
     val exceptionCategory: ExceptionCategory,
-    val exceptionRecoveryKind: ExceptionRecoveryKind? = null,
+    val exceptionRecoveryKind: ExceptionRecoveryKind? = null
 ) {
     // 요청 형식, 값 검증 (VALIDATION)
     INVALID_REQUEST(BAD_REQUEST, ExceptionCategory.VALIDATION),
@@ -52,5 +52,5 @@ enum class ExceptionCode(
 
     // 서버 오류, 점검 (MAINTENANCE)
     INTERNAL_ERROR(INTERNAL_SERVER_ERROR, ExceptionCategory.MAINTENANCE),
-    MAINTENANCE(SERVICE_UNAVAILABLE, ExceptionCategory.MAINTENANCE),
+    MAINTENANCE(SERVICE_UNAVAILABLE, ExceptionCategory.MAINTENANCE)
 }

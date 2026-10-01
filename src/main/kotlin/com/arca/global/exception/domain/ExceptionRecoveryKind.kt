@@ -4,5 +4,5 @@ enum class ExceptionRecoveryKind {
     REESTABLISH_SESSION,
     REFRESH_POLICIES,
     REFRESH_TODAY,
-    QUERY_COMMAND,
+    QUERY_COMMAND
 }

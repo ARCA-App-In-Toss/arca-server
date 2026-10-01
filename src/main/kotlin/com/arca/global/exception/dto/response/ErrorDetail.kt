@@ -17,5 +17,5 @@ data class ErrorDetail(
     val recovery: ExceptionRecovery?,
 
     @field:JsonInclude(NON_NULL)
-    val retryAfterSeconds: Int?,
+    val retryAfterSeconds: Int?
 )

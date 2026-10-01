@@ -15,16 +15,16 @@ import java.util.UUID
 class RequestIdFilter : OncePerRequestFilter() {
 
     override fun doFilterInternal(
-        httpServletRequest: HttpServletRequest,
-        httpServletResponse: HttpServletResponse,
-        filterChain: FilterChain,
+        request: HttpServletRequest,
+        response: HttpServletResponse,
+        filterChain: FilterChain
     ) {
         val requestId = UUID.randomUUID().toString()
-        httpServletRequest.setAttribute(REQUEST_ID_ATTRIBUTE, requestId)
+        request.setAttribute(REQUEST_ID_ATTRIBUTE, requestId)
         ThreadContext.put(REQUEST_ID_ATTRIBUTE, requestId)
 
         try {
-            filterChain.doFilter(httpServletRequest, httpServletResponse)
+            filterChain.doFilter(request, response)
         } finally {
             ThreadContext.remove(REQUEST_ID_ATTRIBUTE)
         }

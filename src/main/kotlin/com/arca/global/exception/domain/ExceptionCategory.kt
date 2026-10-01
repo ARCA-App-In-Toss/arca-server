@@ -5,5 +5,5 @@ enum class ExceptionCategory {
     AUTH,
     CONFLICT,
     RATE_LIMIT,
-    MAINTENANCE,
+    MAINTENANCE
 }

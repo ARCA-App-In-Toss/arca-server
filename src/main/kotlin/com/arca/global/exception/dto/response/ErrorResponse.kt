@@ -4,14 +4,14 @@ import com.arca.global.exception.domain.ExceptionCode
 import com.arca.global.exception.domain.ExceptionRecovery
 
 data class ErrorResponse(
-    val error: ErrorDetail,
+    val error: ErrorDetail
 ) {
     companion object {
         fun of(
             exceptionCode: ExceptionCode,
             requestId: String,
             exceptionRecovery: ExceptionRecovery?,
-            retryAfterSeconds: Int?,
+            retryAfterSeconds: Int?
         ): ErrorResponse {
             return ErrorResponse(
                 error = ErrorDetail(
@@ -19,8 +19,8 @@ data class ErrorResponse(
                     category = exceptionCode.exceptionCategory,
                     requestId = requestId,
                     recovery = exceptionRecovery,
-                    retryAfterSeconds = retryAfterSeconds,
-                ),
+                    retryAfterSeconds = retryAfterSeconds
+                )
             )
         }
     }

@@ -29,91 +29,106 @@ class GlobalExceptionHandler {
 
     @ExceptionHandler(RestApiException::class)
     fun handleRestApiException(
-        restApiException: RestApiException,
-        @RequestAttribute(REQUEST_ID_ATTRIBUTE) requestId: String,
+        e: RestApiException,
+        @RequestAttribute(REQUEST_ID_ATTRIBUTE) requestId: String
     ): ResponseEntity<ErrorResponse> {
-        log.warn("Business exception. requestId={}, code={}", requestId, restApiException.exceptionCode)
+        log.warn("Business exception occurred. requestId = {}, code = {}", requestId, e.exceptionCode)
 
         return makeExceptionResponse(
-            exceptionCode = restApiException.exceptionCode,
+            exceptionCode = e.exceptionCode,
             requestId = requestId,
-            exceptionRecovery = restApiException.exceptionRecovery,
-            retryAfterSeconds = restApiException.retryAfterSeconds,
+            exceptionRecovery = e.exceptionRecovery,
+            retryAfterSeconds = e.retryAfterSeconds
         )
     }
 
     @ExceptionHandler(MethodArgumentNotValidException::class)
-    fun handleValidException(
-        methodArgumentNotValidException: MethodArgumentNotValidException,
-        @RequestAttribute(REQUEST_ID_ATTRIBUTE) requestId: String,
+    fun handleBeanValidationException(
+        e: MethodArgumentNotValidException,
+        @RequestAttribute(REQUEST_ID_ATTRIBUTE) requestId: String
     ): ResponseEntity<ErrorResponse> {
-        val fields = methodArgumentNotValidException.bindingResult.fieldErrors.joinToString(", ") { it.field }
-        log.warn("Request validation failed. requestId={}, fields={}", requestId, fields)
+        val fields = e.bindingResult.fieldErrors.joinToString(", ") { it.field }
+        log.warn("Bean validation exception occurred. requestId = {}, fields = {}", requestId, fields)
 
-        return makeExceptionResponse(INVALID_REQUEST, requestId)
+        return makeExceptionResponse(
+            exceptionCode = INVALID_REQUEST,
+            requestId = requestId
+        )
     }
 
     @ExceptionHandler(
         HandlerMethodValidationException::class,
         ServletRequestBindingException::class,
-        MethodArgumentTypeMismatchException::class,
+        MethodArgumentTypeMismatchException::class
     )
     fun handleInvalidParameterException(
-        exception: Exception,
-        @RequestAttribute(REQUEST_ID_ATTRIBUTE) requestId: String,
+        e: Exception,
+        @RequestAttribute(REQUEST_ID_ATTRIBUTE) requestId: String
     ): ResponseEntity<ErrorResponse> {
-        log.warn("Request parameter invalid. requestId={}, type={}", requestId, exception.javaClass.simpleName)
+        log.warn("Invalid parameter exception occurred. requestId = {}, type = {}", requestId, e.javaClass.simpleName)
 
-        return makeExceptionResponse(INVALID_REQUEST, requestId)
+        return makeExceptionResponse(
+            exceptionCode = INVALID_REQUEST,
+            requestId = requestId
+        )
     }
 
     @ExceptionHandler(HttpMessageNotReadableException::class)
     fun handleHttpMessageNotReadableException(
-        httpMessageNotReadableException: HttpMessageNotReadableException,
-        @RequestAttribute(REQUEST_ID_ATTRIBUTE) requestId: String,
+        e: HttpMessageNotReadableException,
+        @RequestAttribute(REQUEST_ID_ATTRIBUTE) requestId: String
     ): ResponseEntity<ErrorResponse> {
-        val causeType = httpMessageNotReadableException.cause?.javaClass?.simpleName
-        log.warn("Request body unreadable. requestId={}, cause={}", requestId, causeType)
+        val causeType = e.cause?.javaClass?.simpleName
+        log.warn("Http message not readable exception occurred. requestId = {}, cause = {}", requestId, causeType)
 
-        return makeExceptionResponse(INVALID_REQUEST, requestId)
+        return makeExceptionResponse(
+            exceptionCode = INVALID_REQUEST,
+            requestId = requestId
+        )
     }
 
     @ExceptionHandler(
         NoResourceFoundException::class,
         HttpRequestMethodNotSupportedException::class,
         HttpMediaTypeNotSupportedException::class,
-        HttpMediaTypeNotAcceptableException::class,
+        HttpMediaTypeNotAcceptableException::class
     )
     fun handleUnsupportedRequestException(
-        exception: Exception,
-        @RequestAttribute(REQUEST_ID_ATTRIBUTE) requestId: String,
+        e: Exception,
+        @RequestAttribute(REQUEST_ID_ATTRIBUTE) requestId: String
     ): ResponseEntity<ErrorResponse> {
-        log.warn("Request unsupported. requestId={}, type={}", requestId, exception.javaClass.simpleName)
+        log.warn("Unsupported request exception occurred. requestId = {}, type = {}", requestId, e.javaClass.simpleName)
 
-        return makeExceptionResponse(INVALID_REQUEST, requestId)
+        return makeExceptionResponse(
+            exceptionCode = INVALID_REQUEST,
+            requestId = requestId
+        )
     }
 
     @ExceptionHandler(Exception::class)
     fun handleException(
-        exception: Exception,
-        @RequestAttribute(REQUEST_ID_ATTRIBUTE) requestId: String,
+        e: Exception,
+        @RequestAttribute(REQUEST_ID_ATTRIBUTE) requestId: String
     ): ResponseEntity<ErrorResponse> {
-        log.error("Unexpected exception. requestId={}", requestId, exception)
+        log.error("Unexpected exception occurred. requestId = {}", requestId, e)
 
-        return makeExceptionResponse(INTERNAL_ERROR, requestId)
+        return makeExceptionResponse(
+            exceptionCode = INTERNAL_ERROR,
+            requestId = requestId
+        )
     }
 
     private fun makeExceptionResponse(
         exceptionCode: ExceptionCode,
         requestId: String,
         exceptionRecovery: ExceptionRecovery? = null,
-        retryAfterSeconds: Int? = null,
+        retryAfterSeconds: Int? = null
     ): ResponseEntity<ErrorResponse> {
         val response = ErrorResponse.of(
             exceptionCode = exceptionCode,
             requestId = requestId,
             exceptionRecovery = exceptionRecovery,
-            retryAfterSeconds = retryAfterSeconds,
+            retryAfterSeconds = retryAfterSeconds
         )
 
         val bodyBuilder = ResponseEntity.status(exceptionCode.httpStatus).contentType(APPLICATION_JSON)

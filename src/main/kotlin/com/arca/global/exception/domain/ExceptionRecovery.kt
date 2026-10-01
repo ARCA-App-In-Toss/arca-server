@@ -13,14 +13,14 @@ class ExceptionRecovery private constructor(
     val recoveryAllowed: Boolean?,
 
     @field:JsonInclude(NON_NULL)
-    val ticketId: String?,
+    val ticketId: String?
 ) {
     companion object {
         fun reestablishSession(): ExceptionRecovery {
             return ExceptionRecovery(
                 kind = REESTABLISH_SESSION,
                 recoveryAllowed = true,
-                ticketId = null,
+                ticketId = null
             )
         }
 
@@ -28,7 +28,7 @@ class ExceptionRecovery private constructor(
             return ExceptionRecovery(
                 kind = REFRESH_TODAY,
                 recoveryAllowed = null,
-                ticketId = null,
+                ticketId = null
             )
         }
 
@@ -36,7 +36,7 @@ class ExceptionRecovery private constructor(
             return ExceptionRecovery(
                 kind = QUERY_COMMAND,
                 recoveryAllowed = null,
-                ticketId = ticketId,
+                ticketId = ticketId
             )
         }
     }
