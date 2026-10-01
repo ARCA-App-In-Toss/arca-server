@@ -28,7 +28,6 @@ docker compose -f docker-compose-local.yml up -d   # 로컬 MySQL 기동
 만들고 나면 이 목록에서 지운다.
 
 - springdoc-openapi (`{Controller}Docs` 인터페이스의 전제)
-- Flyway (`src/main/resources/database/`)
 - 인증 - `@Auth` 파라미터 주입과 인증 필터
 
 ## 상호작용 규칙
