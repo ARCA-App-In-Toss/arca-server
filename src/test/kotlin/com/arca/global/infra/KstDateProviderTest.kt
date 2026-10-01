@@ -12,7 +12,7 @@ import java.time.ZoneOffset.UTC
 class KstDateProviderTest(
     private val kstDateProvider: KstDateProvider,
 
-    private val clock: Clock,
+    private val clock: Clock
 ) {
 
     @Nested

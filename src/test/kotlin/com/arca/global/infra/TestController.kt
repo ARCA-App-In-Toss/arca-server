@@ -29,7 +29,7 @@ class TestController {
     fun get(): TestResponse {
         return TestResponse(
             name = null,
-            createdAt = Instant.parse(CREATED_AT),
+            createdAt = Instant.parse(CREATED_AT)
         )
     }
 
@@ -37,18 +37,18 @@ class TestController {
     fun post(@Valid @RequestBody request: TestRequest): TestResponse {
         return TestResponse(
             name = request.name,
-            createdAt = Instant.parse(CREATED_AT),
+            createdAt = Instant.parse(CREATED_AT)
         )
     }
 
     @GetMapping("/items/{itemId}")
     fun getItem(
         @PathVariable itemId: Long,
-        @RequestHeader("Idempotency-Key") idempotencyKey: UUID,
+        @RequestHeader("Idempotency-Key") idempotencyKey: UUID
     ): TestResponse {
         return TestResponse(
             name = "$itemId $idempotencyKey",
-            createdAt = Instant.parse(CREATED_AT),
+            createdAt = Instant.parse(CREATED_AT)
         )
     }
 
@@ -61,7 +61,7 @@ class TestController {
     fun throwSessionRecovery(): TestResponse {
         throw RestApiException(
             exceptionCode = SESSION_RECOVERY_REQUIRED,
-            exceptionRecovery = ExceptionRecovery.reestablishSession(),
+            exceptionRecovery = ExceptionRecovery.reestablishSession()
         )
     }
 
@@ -69,7 +69,7 @@ class TestController {
     fun throwCommandPending(): TestResponse {
         throw RestApiException(
             exceptionCode = COMMAND_ALREADY_PENDING,
-            exceptionRecovery = ExceptionRecovery.queryCommand(TICKET_ID),
+            exceptionRecovery = ExceptionRecovery.queryCommand(TICKET_ID)
         )
     }
 
@@ -77,7 +77,7 @@ class TestController {
     fun throwRateLimited(): TestResponse {
         throw RestApiException(
             exceptionCode = RATE_LIMITED,
-            retryAfterSeconds = RETRY_AFTER_SECONDS,
+            retryAfterSeconds = RETRY_AFTER_SECONDS
         )
     }
 
@@ -88,12 +88,12 @@ class TestController {
 
     data class TestRequest(
         @field:NotBlank
-        val name: String,
+        val name: String
     )
 
     data class TestResponse(
         val name: String?,
-        val createdAt: Instant,
+        val createdAt: Instant
     )
 
     companion object {

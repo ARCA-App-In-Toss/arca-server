@@ -25,7 +25,7 @@ import tools.jackson.databind.json.JsonMapper
 class GlobalExceptionHandlerTest(
     private val mockMvc: MockMvc,
 
-    private val jsonMapper: JsonMapper,
+    private val jsonMapper: JsonMapper
 ) {
 
     @Nested

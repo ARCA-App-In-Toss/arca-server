@@ -12,7 +12,7 @@ import org.springframework.test.web.servlet.post
 @IntegrationTest
 @AutoConfigureMockMvc
 class NoStoreCacheControlFilterTest(
-    private val mockMvc: MockMvc,
+    private val mockMvc: MockMvc
 ) {
 
     @Test

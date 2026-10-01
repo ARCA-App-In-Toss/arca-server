@@ -33,7 +33,7 @@ class RestApiExceptionTest {
             //when
             val restApiException = RestApiException(
                 exceptionCode = COMMAND_ALREADY_PENDING,
-                exceptionRecovery = ExceptionRecovery.queryCommand(TICKET_ID),
+                exceptionRecovery = ExceptionRecovery.queryCommand(TICKET_ID)
             )
 
             //then
@@ -53,7 +53,7 @@ class RestApiExceptionTest {
             assertThatThrownBy {
                 RestApiException(
                     exceptionCode = SESSION_RECOVERY_REQUIRED,
-                    exceptionRecovery = ExceptionRecovery.refreshToday(),
+                    exceptionRecovery = ExceptionRecovery.refreshToday()
                 )
             }.isInstanceOf(IllegalStateException::class.java)
         }
@@ -64,7 +64,7 @@ class RestApiExceptionTest {
             assertThatThrownBy {
                 RestApiException(
                     exceptionCode = ANSWER_NOT_FOUND,
-                    exceptionRecovery = ExceptionRecovery.refreshToday(),
+                    exceptionRecovery = ExceptionRecovery.refreshToday()
                 )
             }.isInstanceOf(IllegalStateException::class.java)
         }
@@ -78,11 +78,11 @@ class RestApiExceptionTest {
             //when
             val rateLimited = RestApiException(
                 exceptionCode = RATE_LIMITED,
-                retryAfterSeconds = RETRY_AFTER_SECONDS,
+                retryAfterSeconds = RETRY_AFTER_SECONDS
             )
             val maintenance = RestApiException(
                 exceptionCode = MAINTENANCE,
-                retryAfterSeconds = RETRY_AFTER_SECONDS,
+                retryAfterSeconds = RETRY_AFTER_SECONDS
             )
 
             //then
@@ -96,7 +96,7 @@ class RestApiExceptionTest {
             assertThatThrownBy {
                 RestApiException(
                     exceptionCode = INTERNAL_ERROR,
-                    retryAfterSeconds = RETRY_AFTER_SECONDS,
+                    retryAfterSeconds = RETRY_AFTER_SECONDS
                 )
             }.isInstanceOf(IllegalStateException::class.java)
         }

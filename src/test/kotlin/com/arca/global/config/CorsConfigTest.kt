@@ -21,7 +21,7 @@ import org.springframework.test.web.servlet.options
 class CorsConfigTest(
     private val mockMvc: MockMvc,
 
-    private val corsProperties: CorsProperties,
+    private val corsProperties: CorsProperties
 ) {
 
     @Nested
