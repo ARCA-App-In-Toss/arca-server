@@ -13,6 +13,8 @@ paths:
 - 파일명: `V{major}_{minor}__{description}.sql` (버전 숫자 사이 `_` 1개, 이름 앞 `__` 2개, description은 snake_case)
 - 적용된 파일은 절대 수정·삭제하지 마라 (Flyway checksum 실패). 변경은 항상 새 버전 파일로 추가하라
 - 각 SQL 문 앞에 목적을 주석으로 설명하라
+- 테스트(H2, `MODE=MySQL`)도 같은 마이그레이션을 실행한다. SQL은 MySQL 8.4와 H2 양쪽에서 실행돼야 한다
+- H2가 실행하지 못하는 구문(`FULLTEXT INDEX`)이 처음 필요해지면 그 이슈에서 적용 방식을 정한다
 
 ## SQL 스타일 (MySQL / InnoDB)
 
