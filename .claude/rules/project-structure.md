@@ -24,10 +24,10 @@ src/main/kotlin/com/arca/
 global/
 ├── config/                          # 스프링 설정 (CORS, Swagger, ArgumentResolver 등)
 ├── annotation/                      # 커스텀 어노테이션 (검증용 등)
-├── infra/                           # 어노테이션 구현체, 공용 헬퍼
+├── infra/                           # 어노테이션 구현체, 서블릿 필터, 공용 헬퍼
 └── exception/
-    ├── domain/                      # ExceptionCode, RestApiException
-    ├── dto/response/                # ErrorResponse
+    ├── domain/                      # ExceptionCode, ExceptionCategory, ExceptionRecovery, ExceptionRecoveryKind, RestApiException
+    ├── dto/response/                # ErrorResponse, ErrorDetail
     └── handler/                     # GlobalExceptionHandler
 ```
 

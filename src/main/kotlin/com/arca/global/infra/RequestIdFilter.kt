@@ -3,30 +3,34 @@ package com.arca.global.infra
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
+import org.apache.logging.log4j.ThreadContext
 import org.springframework.core.Ordered.HIGHEST_PRECEDENCE
 import org.springframework.core.annotation.Order
-import org.springframework.http.HttpHeaders.CACHE_CONTROL
 import org.springframework.stereotype.Component
 import org.springframework.web.filter.OncePerRequestFilter
+import java.util.UUID
 
 @Component
-@Order(HIGHEST_PRECEDENCE)
-class NoStoreCacheControlFilter : OncePerRequestFilter() {
+@Order(HIGHEST_PRECEDENCE + 1)
+class RequestIdFilter : OncePerRequestFilter() {
 
     override fun doFilterInternal(
         request: HttpServletRequest,
         response: HttpServletResponse,
         filterChain: FilterChain
     ) {
-        response.setHeader(CACHE_CONTROL, NO_STORE)
-        filterChain.doFilter(request, response)
-    }
+        val requestId = UUID.randomUUID().toString()
+        request.setAttribute(REQUEST_ID_ATTRIBUTE, requestId)
+        ThreadContext.put(REQUEST_ID_ATTRIBUTE, requestId)
 
-    override fun shouldNotFilterErrorDispatch(): Boolean {
-        return false
+        try {
+            filterChain.doFilter(request, response)
+        } finally {
+            ThreadContext.remove(REQUEST_ID_ATTRIBUTE)
+        }
     }
 
     companion object {
-        private const val NO_STORE = "no-store"
+        const val REQUEST_ID_ATTRIBUTE = "requestId"
     }
 }

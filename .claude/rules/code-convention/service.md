@@ -18,12 +18,12 @@ paths:
 @Service
 class PostService(
     private val postRepository: PostRepository,
-    private val memberRepository: MemberRepository,
+    private val memberRepository: MemberRepository
 ) {
     @Transactional
     fun deletePost(
         memberId: Long,
-        postId: Long,
+        postId: Long
     ) {
         val post = postRepository.findByMemberIdAndPostId(memberId, postId)
             ?: throw RestApiException(POST_NOT_FOUND)

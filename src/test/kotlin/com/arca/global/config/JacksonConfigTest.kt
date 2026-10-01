@@ -22,7 +22,7 @@ import java.time.Instant
 class JacksonConfigTest(
     private val jsonMapper: JsonMapper,
 
-    private val mockMvc: MockMvc,
+    private val mockMvc: MockMvc
 ) {
 
     @Nested
@@ -74,7 +74,7 @@ class JacksonConfigTest(
             //given
             val response = TestResponse(
                 name = null,
-                createdAt = Instant.parse(CREATED_AT),
+                createdAt = Instant.parse(CREATED_AT)
             )
 
             //when
@@ -89,7 +89,7 @@ class JacksonConfigTest(
             //given
             val response = TestResponse(
                 name = null,
-                createdAt = Instant.parse(CREATED_AT),
+                createdAt = Instant.parse(CREATED_AT)
             )
 
             //when

@@ -18,7 +18,7 @@ import com.arca.global.infra.IntegrationTest
 class {Target}Test(
     private val target: {TargetClass},
 
-    private val repository: {Repository},
+    private val repository: {Repository}
 ) {
     @Nested
     inner class {기능}_테스트 {
@@ -63,10 +63,10 @@ import com.arca.{domain}.domain.{Entity}
 object {Entity}Fixture {
     fun create{Entity}(
         {field}: {Type},
-        {stateField}: {StateType},
+        {stateField}: {StateType}
     ): {Entity} {
         val entity = {Entity}.create(
-            {field} = {field},
+            {field} = {field}
         )
         // 팩토리가 받지 않는 값(현재 인원, 생성 시각처럼 도메인 흐름이 바꾸는 값)만 리플렉션으로 채운다
         ReflectionTestUtils.setField(entity, "{stateField}", {stateField})

@@ -1,10 +1,10 @@
 ---
 name: open-pr
 description: |
-  PR을 생성한다. PULL_REQUEST_TEMPLATE.md 규격에 맞춰 본문을 작성하고, 담당자를 지정해 gh pr create를 실행한다.
+  PR을 생성한다. PULL_REQUEST_TEMPLATE.md 규격에 맞춰 본문을 작성하고, 담당자와 라벨을 지정해 gh pr create를 실행한다.
   Trigger: "PR 날려줘", "PR 만들어줘", "PR 생성해줘", "PR 올려줘"
   Do NOT use for: 커밋 생성(직접 git commit), 브랜치 생성, 코드 리뷰
-  Boundary: PR 생성과 담당자 지정까지만 수행한다. 머지, 리뷰 요청, 라벨 설정은 범위 밖이다.
+  Boundary: PR 생성, 담당자와 라벨 지정, 이슈 연결 확인까지만 수행한다. 머지와 리뷰 요청은 범위 밖이다.
 allowed-tools: Bash(git *), Bash(gh *), Read, Write
 model: sonnet
 effort: xhigh
@@ -22,8 +22,13 @@ effort: xhigh
    - 이슈 번호가 없으면 사용자에게 물어보라
 3. `git log main..HEAD --oneline` (또는 $ARGUMENTS..HEAD)으로 이 브랜치의 커밋 목록을 확인하라
 4. `git diff main...HEAD --stat`으로 변경된 파일 목록을 파악하라
+5. 이슈의 라벨을 확인하라. PR에 같은 라벨을 붙이는 데 쓴다.
+   ```bash
+   gh issue view {이슈번호} --json labels --jq '.labels[].name'
+   ```
+   - 이슈에 라벨이 없으면 브랜치 접두사(`{type}`)에 대응하는 라벨을 `.claude/spec/git-convention.md`의 커밋 타입 표에서 찾아 쓴다
 
-> 다음 Phase 조건: 이슈 번호와 변경 사항이 파악되었을 때
+> 다음 Phase 조건: 이슈 번호, 이슈 라벨, 변경 사항이 파악되었을 때
 
 > Skip 조건: 없음 (필수 Phase)
 
@@ -138,13 +143,22 @@ Phase 1에서 파악한 변경이 성능 개선이면 위 규칙에 아래를 �
 3. 본문은 스크래치 파일에 저장한 뒤 `--body-file`로 넘겨라 (긴 본문의 셸 이스케이프 사고를 막는다).
 4. 다음 명령으로 PR을 생성하라:
    ```bash
-   gh pr create --title "{제목}" --body-file {본문파일} --base {대상 브랜치} --assignee @me
+   gh pr create --title "{제목}" --body-file {본문파일} --base {대상 브랜치} --assignee @me --label "{라벨}"
    ```
    - 담당자는 항상 호출자 본인(`@me`)이다.
+   - 라벨은 Phase 1에서 확인한 이슈 라벨과 똑같이 맞춘다. 이슈 라벨이 여러 개면 `--label`을 라벨마다 반복한다.
    - 리뷰어는 지정하지 않는다. 팀 로스터가 아직 정해지지 않았다.
      기여자가 늘면 `.claude/spec/git-convention.md`에 팀 로스터를 두고 여기서 참조하도록 바꾼다.
+5. PR이 이슈를 닫도록 연결되었는지 확인하라:
+   ```bash
+   gh pr view {PR번호} --json closingIssuesReferences --jq '.closingIssuesReferences[].number'
+   ```
+   - 이슈 번호가 나오면 연결된 것이다.
+   - 비어 있으면 본문의 `- close #{이슈번호}` 줄과 base 브랜치를 점검하라. 닫기 키워드는 PR의 base가 레포 기본 브랜치일 때만 동작한다.
+     본문과 base가 맞는데도 비어 있으면 고치려 들지 말고, 머지 후 이슈가 자동으로 닫히지 않는다는 사실을 결과 보고에 적어라.
+     (레포 설정 `Settings > General > Issues > Auto-close issues with merged linked pull requests`가 꺼져 있으면 연결되어도 닫히지 않는다.)
 
-> 다음 Phase 조건: PR이 생성되었을 때
+> 다음 Phase 조건: PR이 생성되고 이슈 연결 여부를 확인했을 때
 
 > Skip 조건: 없음 (필수 Phase)
 

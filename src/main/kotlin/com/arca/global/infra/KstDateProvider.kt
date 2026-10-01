@@ -8,7 +8,7 @@ import java.time.ZoneId
 
 @Component
 class KstDateProvider(
-    private val clock: Clock,
+    private val clock: Clock
 ) {
 
     fun today(): LocalDate {

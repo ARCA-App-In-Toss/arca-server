@@ -26,7 +26,7 @@ interface PostRepository : JpaRepository<Post, Long> {
     """)
     fun findByMemberIdAndPostId(
         @Param("memberId") memberId: Long,
-        @Param("postId") postId: Long,
+        @Param("postId") postId: Long
     ): Post?
 }
 ```

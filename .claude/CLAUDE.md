@@ -27,7 +27,6 @@ docker compose -f docker-compose-local.yml up -d   # 로컬 MySQL 기동
 없는 것을 참조해야 하는 작업이면, 먼저 사용자에게 알리고 규칙에 적힌 위치와 이름으로 만든다.
 만들고 나면 이 목록에서 지운다.
 
-- `global/exception/` - `ExceptionCode`, `RestApiException`, `ErrorResponse`, `GlobalExceptionHandler`
 - springdoc-openapi (`{Controller}Docs` 인터페이스의 전제)
 - Flyway (`src/main/resources/database/`)
 - 인증 - `@Auth` 파라미터 주입과 인증 필터

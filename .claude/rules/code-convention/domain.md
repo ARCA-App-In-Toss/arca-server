@@ -34,7 +34,7 @@ paths:
 @Table(name = "posts")
 class Post private constructor(
     member: Member,
-    title: String,
+    title: String
 ) {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -57,11 +57,11 @@ class Post private constructor(
     companion object {
         fun create(
             member: Member,
-            title: String,
+            title: String
         ): Post {
             return Post(
                 member = member,
-                title = title,
+                title = title
             )
         }
     }
@@ -90,7 +90,7 @@ class Post private constructor(
 ```kotlin
 enum class PostStatus(
     val code: String,
-    val displayName: String,
+    val displayName: String
 ) {
     PUBLISHED("P", "게시"),
     HIDDEN("H", "숨김");
