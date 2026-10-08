@@ -51,7 +51,6 @@ enum class ExceptionCode(
     REVISION_CONFLICT(HttpStatus.CONFLICT, ExceptionCategory.CONFLICT),
     COMMAND_ALREADY_PENDING(HttpStatus.CONFLICT, ExceptionCategory.CONFLICT, QUERY_COMMAND),
     IDEMPOTENCY_KEY_REUSED(HttpStatus.CONFLICT, ExceptionCategory.CONFLICT),
-    COMMAND_NOT_TERMINAL(HttpStatus.CONFLICT, ExceptionCategory.CONFLICT),
     OPERATION_RESULT_EXPIRED(HttpStatus.CONFLICT, ExceptionCategory.CONFLICT),
 
     // 요청 제한 (RATE_LIMIT)

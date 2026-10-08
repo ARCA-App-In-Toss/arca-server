@@ -21,6 +21,15 @@ spring:
 cors:
   allowed-origins: ${CORS_ALLOWED_ORIGINS:}
 
+auth-session:
+  ttl: 24h
+
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
 logging:
   pattern:
     correlation: "[%X{requestId}] "

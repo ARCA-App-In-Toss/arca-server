@@ -25,3 +25,6 @@ spring:
 cors:
   allowed-origins:
     - https://miniapp.arca.test
+
+auth-session:
+  ttl: 24h
