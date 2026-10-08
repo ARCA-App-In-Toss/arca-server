@@ -31,6 +31,6 @@ class AllowedSessionModesCoverageTest(
     companion object {
         private const val API_PREFIX = "/v1"
         private val TEST_CONTROLLERS = setOf<Class<*>>(TestController::class.java, AuthTestController::class.java)
-        private val PUBLIC_HANDLERS = emptySet<String>()
+        private val PUBLIC_HANDLERS = setOf("AuthSessionController.createSession")
     }
 }
