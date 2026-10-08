@@ -26,7 +26,7 @@ paths:
 
 ## 필드명
 
-- JSON 필드명은 API 계약의 이름을 그대로 써라 (`passengerCode`, `items`, `nextCursor`, `consentPolicies`)
+- JSON 필드명은 API 계약의 이름을 그대로 써라 (`memberCode`, `items`, `nextCursor`, `consentPolicies`)
 - 계약과 이 문서의 네이밍 규칙이 어긋나면 계약이 우선이다
 
 ## Request

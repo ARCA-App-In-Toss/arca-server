@@ -3,10 +3,10 @@ CREATE TABLE auth_sessions (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     token_hash VARCHAR(64) NOT NULL,
     session_mode VARCHAR(50) NOT NULL,
-    passenger_id BIGINT NULL,
+    member_id BIGINT NULL,
     expires_at DATETIME(6) NOT NULL,
     revoked_at DATETIME(6) NULL,
     created_at DATETIME(6) NOT NULL,
     UNIQUE INDEX uk_token_hash (token_hash),
-    INDEX idx_passenger_id (passenger_id)
+    INDEX idx_member_id (member_id)
 ) ENGINE=InnoDB;

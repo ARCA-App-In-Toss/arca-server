@@ -1,6 +1,6 @@
 package com.arca.auth.controller
 
-import com.arca.auth.domain.SessionMode.PRE_PASSENGER
+import com.arca.auth.domain.SessionMode.GUEST
 import com.arca.auth.infra.AccessTokenHasher
 import com.arca.auth.infra.FakeAnonymousKeyVerifier.Companion.INVALID_ANONYMOUS_KEY
 import com.arca.auth.repository.AuthSessionRepository
@@ -35,7 +35,7 @@ class AuthSessionControllerTest(
     inner class 유효한_익명_키로_교환하면 {
 
         @Test
-        fun PRE_PASSENGER_세션을_201로_발급한다() {
+        fun GUEST_세션을_201로_발급한다() {
             //when
             val response = postSession(bodyOf(VALID_ANONYMOUS_KEY))
 
@@ -43,9 +43,9 @@ class AuthSessionControllerTest(
             val body = jsonMapper.readTree(response.contentAsString)
             assertThat(response.status).isEqualTo(201)
             assertThat(body.get("accessToken").asString()).isNotEmpty()
-            assertThat(body.get("context").get("mode").asString()).isEqualTo(PRE_PASSENGER.name)
-            assertThat(body.get("context").has("passenger")).isTrue()
-            assertThat(body.get("context").get("passenger").isNull).isTrue()
+            assertThat(body.get("context").get("mode").asString()).isEqualTo(GUEST.name)
+            assertThat(body.get("context").has("member")).isTrue()
+            assertThat(body.get("context").get("member").isNull).isTrue()
         }
 
         @Test
@@ -92,15 +92,15 @@ class AuthSessionControllerTest(
         }
 
         @Test
-        fun 발급된_토큰은_승객_없는_PRE_PASSENGER_세션으로_인증된다() {
+        fun 발급된_토큰은_회원_없는_GUEST_세션으로_인증된다() {
             //when
             val response = postSession(bodyOf(VALID_ANONYMOUS_KEY))
 
             //then
             val accessToken = jsonMapper.readTree(response.contentAsString).get("accessToken").asString()
             val authSession = authSessionService.authenticate(accessToken)
-            assertThat(authSession.sessionMode).isEqualTo(PRE_PASSENGER)
-            assertThat(authSession.passengerId).isNull()
+            assertThat(authSession.sessionMode).isEqualTo(GUEST)
+            assertThat(authSession.memberId).isNull()
             assertThat(authSession.tokenHash).isEqualTo(accessTokenHasher.hash(accessToken))
         }
 
@@ -236,7 +236,7 @@ class AuthSessionControllerTest(
         private const val HTTPS_PREFIX = "https://"
         private val TTL = Duration.ofHours(24)
         private val RESPONSE_FIELDS = arrayOf("accessToken", "expiresAt", "context", "consentPolicies")
-        private val CONTEXT_FIELDS = arrayOf("mode", "passenger")
+        private val CONTEXT_FIELDS = arrayOf("mode", "member")
         private val CONSENT_POLICY_FIELDS = arrayOf("policyId", "version", "title", "url", "required")
     }
 }

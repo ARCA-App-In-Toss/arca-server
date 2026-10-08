@@ -2,7 +2,7 @@ package com.arca.auth.service
 
 import com.arca.auth.domain.AuthSession
 import com.arca.auth.domain.SessionMode.ACTIVE
-import com.arca.auth.domain.SessionMode.PRE_PASSENGER
+import com.arca.auth.domain.SessionMode.GUEST
 import com.arca.auth.fixture.AuthSessionFixture
 import com.arca.auth.infra.AccessTokenHasher
 import com.arca.auth.repository.AuthSessionRepository
@@ -35,22 +35,22 @@ class AuthSessionServiceTest(
             //when
             val issuedTokenDto = authSessionService.issue(
                 sessionMode = ACTIVE,
-                passengerId = PASSENGER_ID
+                memberId = MEMBER_ID
             )
 
             //then
             val authSession = findByAccessToken(issuedTokenDto.accessToken)
             assertThat(authSession.tokenHash).isNotEqualTo(issuedTokenDto.accessToken)
             assertThat(authSession.sessionMode).isEqualTo(ACTIVE)
-            assertThat(authSession.passengerId).isEqualTo(PASSENGER_ID)
+            assertThat(authSession.memberId).isEqualTo(MEMBER_ID)
         }
 
         @Test
         fun 만료_시각은_발급_시각에서_TTL만큼_뒤다() {
             //when
             val issuedTokenDto = authSessionService.issue(
-                sessionMode = PRE_PASSENGER,
-                passengerId = null
+                sessionMode = GUEST,
+                memberId = null
             )
 
             //then
@@ -68,7 +68,7 @@ class AuthSessionServiceTest(
             //given
             val issuedTokenDto = authSessionService.issue(
                 sessionMode = ACTIVE,
-                passengerId = PASSENGER_ID
+                memberId = MEMBER_ID
             )
 
             //when
@@ -76,7 +76,7 @@ class AuthSessionServiceTest(
 
             //then
             assertThat(authSession.sessionMode).isEqualTo(ACTIVE)
-            assertThat(authSession.passengerId).isEqualTo(PASSENGER_ID)
+            assertThat(authSession.memberId).isEqualTo(MEMBER_ID)
         }
 
         @Test
@@ -92,7 +92,7 @@ class AuthSessionServiceTest(
             //given
             val issuedTokenDto = authSessionService.issue(
                 sessionMode = ACTIVE,
-                passengerId = PASSENGER_ID
+                memberId = MEMBER_ID
             )
             authSessionService.revoke(findByAccessToken(issuedTokenDto.accessToken).id)
 
@@ -126,7 +126,7 @@ class AuthSessionServiceTest(
             //given
             val issuedTokenDto = authSessionService.issue(
                 sessionMode = ACTIVE,
-                passengerId = PASSENGER_ID
+                memberId = MEMBER_ID
             )
             val authSession = findByAccessToken(issuedTokenDto.accessToken)
 
@@ -151,7 +151,7 @@ class AuthSessionServiceTest(
     }
 
     companion object {
-        private const val PASSENGER_ID = 1L
+        private const val MEMBER_ID = 1L
         private const val UNKNOWN_SESSION_ID = -1L
         private const val UNKNOWN_TOKEN = "unknown-token"
         private const val EXPIRED_TOKEN = "expired-token"

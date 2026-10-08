@@ -1,13 +1,13 @@
-package com.arca.passenger.dto.response
+package com.arca.member.dto.response
 
 import io.swagger.v3.oas.annotations.media.Schema
 
-data class PassengerProfileResponse(
+data class MemberProfileResponse(
     @field:Schema(
-        description = "표시용 승객 코드",
+        description = "표시용 회원 코드",
         example = "SYNTHETIC-001"
     )
-    val passengerCode: String,
+    val memberCode: String,
 
     @field:Schema(
         description = "닉네임, 없으면 null",

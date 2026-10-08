@@ -2,7 +2,7 @@ package com.arca.global.infra
 
 import com.arca.auth.domain.SessionMode
 import com.arca.auth.domain.SessionMode.ACTIVE
-import com.arca.auth.domain.SessionMode.PRE_PASSENGER
+import com.arca.auth.domain.SessionMode.GUEST
 import com.arca.auth.infra.AccessTokenHasher
 import com.arca.auth.repository.AuthSessionRepository
 import com.arca.auth.service.AuthSessionService
@@ -78,7 +78,7 @@ class AuthInterceptorTest(
         @Test
         fun 폐기된_토큰이면_SESSION_RECOVERY_REQUIRED와_recovery로_응답한다() {
             //given
-            val accessToken = issueToken(ACTIVE, PASSENGER_ID)
+            val accessToken = issueToken(ACTIVE, MEMBER_ID)
             val authSession = checkNotNull(authSessionRepository.findByTokenHash(accessTokenHasher.hash(accessToken)))
             authSessionService.revoke(authSession.id)
 
@@ -95,7 +95,7 @@ class AuthInterceptorTest(
         @Test
         fun 허용되지_않은_mode면_SESSION_SCOPE_INSUFFICIENT() {
             //given
-            val accessToken = issueToken(PRE_PASSENGER, null)
+            val accessToken = issueToken(GUEST, null)
 
             //when
             val response = mockMvc.get(ACTIVE_PATH) {
@@ -109,7 +109,7 @@ class AuthInterceptorTest(
         @Test
         fun 허용된_mode면_세션을_주입한다() {
             //given
-            val accessToken = issueToken(ACTIVE, PASSENGER_ID)
+            val accessToken = issueToken(ACTIVE, MEMBER_ID)
 
             //when
             val response = mockMvc.get(ACTIVE_PATH) {
@@ -124,7 +124,7 @@ class AuthInterceptorTest(
         @Test
         fun Bearer는_대소문자를_가리지_않는다() {
             //given
-            val accessToken = issueToken(ACTIVE, PASSENGER_ID)
+            val accessToken = issueToken(ACTIVE, MEMBER_ID)
 
             //when
             val response = mockMvc.get(ACTIVE_PATH) {
@@ -152,11 +152,11 @@ class AuthInterceptorTest(
 
     private fun issueToken(
         sessionMode: SessionMode,
-        passengerId: Long?
+        memberId: Long?
     ): String {
         return authSessionService.issue(
             sessionMode = sessionMode,
-            passengerId = passengerId
+            memberId = memberId
         ).accessToken
     }
 
@@ -178,6 +178,6 @@ class AuthInterceptorTest(
         private const val PUBLIC_PATH = "/v1/test-auth/public"
         private const val BEARER = "Bearer"
         private const val UNKNOWN_TOKEN = "unknown-token"
-        private const val PASSENGER_ID = 1L
+        private const val MEMBER_ID = 1L
     }
 }

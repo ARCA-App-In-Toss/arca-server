@@ -1,7 +1,7 @@
 package com.arca.auth.domain
 
 import com.arca.auth.domain.SessionMode.ACTIVE
-import com.arca.auth.domain.SessionMode.PRE_PASSENGER
+import com.arca.auth.domain.SessionMode.GUEST
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType.STRING
@@ -17,7 +17,7 @@ import java.time.Instant
 class AuthSession private constructor(
     tokenHash: String,
     sessionMode: SessionMode,
-    passengerId: Long?,
+    memberId: Long?,
     expiresAt: Instant,
     createdAt: Instant
 ) {
@@ -35,8 +35,8 @@ class AuthSession private constructor(
     var sessionMode: SessionMode = sessionMode
         protected set
 
-    @Column(name = "passenger_id")
-    var passengerId: Long? = passengerId
+    @Column(name = "member_id")
+    var memberId: Long? = memberId
         protected set
 
     @Column(nullable = false, name = "expires_at")
@@ -73,33 +73,33 @@ class AuthSession private constructor(
         fun create(
             tokenHash: String,
             sessionMode: SessionMode,
-            passengerId: Long?,
+            memberId: Long?,
             expiresAt: Instant,
             createdAt: Instant
         ): AuthSession {
-            validatePassengerId(
+            validateMemberId(
                 sessionMode = sessionMode,
-                passengerId = passengerId
+                memberId = memberId
             )
 
             return AuthSession(
                 tokenHash = tokenHash,
                 sessionMode = sessionMode,
-                passengerId = passengerId,
+                memberId = memberId,
                 expiresAt = expiresAt,
                 createdAt = createdAt
             )
         }
 
-        private fun validatePassengerId(
+        private fun validateMemberId(
             sessionMode: SessionMode,
-            passengerId: Long?
+            memberId: Long?
         ) {
             val isValid = when (sessionMode) {
-                PRE_PASSENGER -> passengerId == null
-                ACTIVE -> passengerId != null
+                GUEST -> memberId == null
+                ACTIVE -> memberId != null
             }
-            check(isValid) { "Passenger id does not match session mode. sessionMode = $sessionMode" }
+            check(isValid) { "Member id does not match session mode. sessionMode = $sessionMode" }
         }
     }
 }

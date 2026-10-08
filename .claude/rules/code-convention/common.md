@@ -164,7 +164,7 @@ return PostsResponse.of(...)
 - 패키지는 도메인 단위로 나눠라
 - 클래스는 PascalCase로 작성하라 (`MemberService`, `PostController`)
 - 함수는 camelCase + CRUD 동사를 사용하라 (`findByMemberId`, `createPost`, `deletePost`)
-- API 경로는 `/v1` 아래에 kebab-case로 작성하라. 리소스 이름과 단복수는 API 계약을 그대로 따른다 (`/v1/passenger`, `/v1/answers`, `/v1/questions/today`)
+- API 경로는 `/v1` 아래에 kebab-case로 작성하라. 리소스 이름과 단복수는 API 계약을 그대로 따른다 (`/v1/members`, `/v1/answers`, `/v1/questions/today`)
 - 연속된 대문자를 쓰지 마라 (`lastSemesterGPA` 대신 `lastSemesterGpa`, `userID` 대신 `userId`)
 
 ### 클래스 타입 변수는 타입명을 그대로 써라
@@ -223,7 +223,7 @@ class Post {
 
 1. **다른 엔티티에서 온 값은 출처를 밝힌다.** `PostResponse.memberNickname`은 게시글이 아니라 회원의 값이다
 2. **같은 종류의 필드가 둘 이상이면 수식어를 남긴다.** 코드가 둘(내부 코드, 외부 연동 코드)이면 한쪽만 `code`로 줄였을 때 어느 쪽인지 알 수 없다
-3. **API 계약이 정한 DTO 필드명은 계약을 따른다.** 계약이 `PassengerProfile.passengerCode`, `answerId`로 정했으면 그대로 쓴다 (`dto.md`)
+3. **API 계약이 정한 DTO 필드명은 계약을 따른다.** 계약이 `MemberProfile.memberCode`, `answerId`로 정했으면 그대로 쓴다 (`dto.md`)
 
 ### enum 타입명은 도메인 접두사를 유지하라
 

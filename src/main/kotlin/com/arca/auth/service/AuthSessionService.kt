@@ -2,7 +2,7 @@ package com.arca.auth.service
 
 import com.arca.auth.domain.AuthSession
 import com.arca.auth.domain.SessionMode
-import com.arca.auth.domain.SessionMode.PRE_PASSENGER
+import com.arca.auth.domain.SessionMode.GUEST
 import com.arca.auth.dto.internal.IssuedTokenDto
 import com.arca.auth.dto.request.CreateSessionRequest
 import com.arca.auth.dto.response.CreateSessionResponse
@@ -42,15 +42,15 @@ class AuthSessionService (
         }
 
         val issuedTokenDto = issue(
-            sessionMode = PRE_PASSENGER,
-            passengerId = null
+            sessionMode = GUEST,
+            memberId = null
         )
 
         return CreateSessionResponse.of(
             issuedTokenDto = issuedTokenDto,
             context = SessionContextResponse.of(
-                sessionMode = PRE_PASSENGER,
-                passenger = null
+                sessionMode = GUEST,
+                member = null
             ),
             consentPolicies = ConsentPolicy.entries.map { ConsentPolicyResponse.from(it) }
         )
@@ -59,7 +59,7 @@ class AuthSessionService (
     @Transactional
     fun issue(
         sessionMode: SessionMode,
-        passengerId: Long?
+        memberId: Long?
     ): IssuedTokenDto {
         val now = clock.instant()
         val accessToken = accessTokenGenerator.generate()
@@ -68,7 +68,7 @@ class AuthSessionService (
         val authSession = AuthSession.create(
             tokenHash = accessTokenHasher.hash(accessToken),
             sessionMode = sessionMode,
-            passengerId = passengerId,
+            memberId = memberId,
             expiresAt = expiresAt,
             createdAt = now
         )

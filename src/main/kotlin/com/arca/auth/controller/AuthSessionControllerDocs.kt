@@ -20,7 +20,7 @@ interface AuthSessionControllerDocs {
 
     @Operation(
         summary = "세션 교환",
-        description = "앱인토스 익명 키를 검증하고 세션을 발급합니다. 승객을 만들지 않습니다.<br>" +
+        description = "앱인토스 익명 키를 검증하고 세션을 발급합니다. 회원을 만들지 않습니다.<br>" +
             "🔓 <strong>인증 불필요</strong><br>"
     )
     @ApiResponses(
