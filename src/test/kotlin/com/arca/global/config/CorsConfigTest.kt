@@ -1,6 +1,7 @@
 package com.arca.global.config
 
 import com.arca.global.infra.IntegrationTest
+import com.arca.global.property.CorsProperties
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test

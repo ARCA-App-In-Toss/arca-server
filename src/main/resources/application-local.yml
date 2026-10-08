@@ -26,6 +26,9 @@ cors:
   allowed-origins:
     - http://localhost:5173
 
+auth-session:
+  ttl: 24h
+
 logging:
   pattern:
     correlation: "[%X{requestId}] "

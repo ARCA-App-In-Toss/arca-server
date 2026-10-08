@@ -8,11 +8,14 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.HttpStatus.BAD_REQUEST
 import org.springframework.http.HttpStatus.FORBIDDEN
 import org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR
+import org.springframework.http.HttpStatus.METHOD_NOT_ALLOWED
+import org.springframework.http.HttpStatus.NOT_ACCEPTABLE
 import org.springframework.http.HttpStatus.NOT_FOUND
 import org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE
 import org.springframework.http.HttpStatus.TOO_MANY_REQUESTS
 import org.springframework.http.HttpStatus.UNAUTHORIZED
 import org.springframework.http.HttpStatus.UNPROCESSABLE_ENTITY
+import org.springframework.http.HttpStatus.UNSUPPORTED_MEDIA_TYPE
 
 enum class ExceptionCode(
     val httpStatus: HttpStatus,
@@ -22,6 +25,10 @@ enum class ExceptionCode(
     // 요청 형식, 값 검증 (VALIDATION)
     INVALID_REQUEST(BAD_REQUEST, ExceptionCategory.VALIDATION),
     CURSOR_INVALID(BAD_REQUEST, ExceptionCategory.VALIDATION),
+    ENDPOINT_NOT_FOUND(NOT_FOUND, ExceptionCategory.VALIDATION),
+    METHOD_NOT_SUPPORTED(METHOD_NOT_ALLOWED, ExceptionCategory.VALIDATION),
+    MEDIA_TYPE_NOT_SUPPORTED(UNSUPPORTED_MEDIA_TYPE, ExceptionCategory.VALIDATION),
+    MEDIA_TYPE_NOT_ACCEPTABLE(NOT_ACCEPTABLE, ExceptionCategory.VALIDATION),
     PASSENGER_NOT_FOUND(NOT_FOUND, ExceptionCategory.VALIDATION),
     ANSWER_NOT_FOUND(NOT_FOUND, ExceptionCategory.VALIDATION),
     COMMAND_NOT_FOUND(NOT_FOUND, ExceptionCategory.VALIDATION),
@@ -44,7 +51,6 @@ enum class ExceptionCode(
     REVISION_CONFLICT(HttpStatus.CONFLICT, ExceptionCategory.CONFLICT),
     COMMAND_ALREADY_PENDING(HttpStatus.CONFLICT, ExceptionCategory.CONFLICT, QUERY_COMMAND),
     IDEMPOTENCY_KEY_REUSED(HttpStatus.CONFLICT, ExceptionCategory.CONFLICT),
-    COMMAND_NOT_TERMINAL(HttpStatus.CONFLICT, ExceptionCategory.CONFLICT),
     OPERATION_RESULT_EXPIRED(HttpStatus.CONFLICT, ExceptionCategory.CONFLICT),
 
     // 요청 제한 (RATE_LIMIT)

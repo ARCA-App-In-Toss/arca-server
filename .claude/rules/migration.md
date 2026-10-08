@@ -22,7 +22,7 @@ paths:
 - 스토리지 엔진: `ENGINE=InnoDB`
 - PK: `id BIGINT AUTO_INCREMENT PRIMARY KEY`
 - FK 컬럼: `{참조테이블}_id` (`course_id`, `member_id`) + `FOREIGN KEY ... REFERENCES ...`
-- timestamp: `DATETIME`, 시간: `TIME`
+- timestamp: `DATETIME(6)` (MySQL `DATETIME`은 소수 초를 반올림해 `Instant` 왕복 값이 달라진다), 시간: `TIME`
 - enum: `VARCHAR(50)` (`@Enumerated(EnumType.STRING)`과 매핑, CHECK 제약은 쓰지 않음)
 - 인덱스: 테이블 정의 안에 `INDEX idx_{용도} (컬럼)` 인라인 선언
 - 전문 검색: `FULLTEXT INDEX ft_idx_{용도} (컬럼들) WITH PARSER ngram`

@@ -196,38 +196,31 @@ class GlobalExceptionHandlerTest(
             //then
             assertInvalidRequest(response)
         }
+    }
+
+    @Nested
+    inner class 지원하지_않는_요청이면_전용_code로_응답한다 {
 
         @Test
-        fun 없는_경로일_때() {
+        fun 없는_경로일_때_ENDPOINT_NOT_FOUND() {
             //when
             val response = mockMvc.get("/v1/unknown").andReturn().response
 
             //then
-            assertInvalidRequest(response)
+            assertValidationError(response, 404, "ENDPOINT_NOT_FOUND")
         }
 
         @Test
-        fun 지원하지_않는_메서드일_때() {
+        fun 지원하지_않는_메서드일_때_METHOD_NOT_SUPPORTED() {
             //when
             val response = mockMvc.delete(PATH).andReturn().response
 
             //then
-            assertInvalidRequest(response)
+            assertValidationError(response, 405, "METHOD_NOT_SUPPORTED")
         }
 
         @Test
-        fun 응답으로_JSON을_받지_않을_때() {
-            //when
-            val response = mockMvc.get(PATH) {
-                accept = TEXT_HTML
-            }.andReturn().response
-
-            //then
-            assertInvalidRequest(response)
-        }
-
-        @Test
-        fun Content_Type이_JSON이_아닐_때() {
+        fun Content_Type이_JSON이_아닐_때_MEDIA_TYPE_NOT_SUPPORTED() {
             //when
             val response = mockMvc.post(PATH) {
                 contentType = TEXT_PLAIN
@@ -235,7 +228,18 @@ class GlobalExceptionHandlerTest(
             }.andReturn().response
 
             //then
-            assertInvalidRequest(response)
+            assertValidationError(response, 415, "MEDIA_TYPE_NOT_SUPPORTED")
+        }
+
+        @Test
+        fun 응답으로_JSON을_받지_않을_때_MEDIA_TYPE_NOT_ACCEPTABLE() {
+            //when
+            val response = mockMvc.get(PATH) {
+                accept = TEXT_HTML
+            }.andReturn().response
+
+            //then
+            assertValidationError(response, 406, "MEDIA_TYPE_NOT_ACCEPTABLE")
         }
     }
 
@@ -281,10 +285,18 @@ class GlobalExceptionHandlerTest(
     }
 
     private fun assertInvalidRequest(response: MockHttpServletResponse) {
+        assertValidationError(response, 400, "INVALID_REQUEST")
+    }
+
+    private fun assertValidationError(
+        response: MockHttpServletResponse,
+        status: Int,
+        code: String
+    ) {
         val error = errorOf(response)
-        assertThat(response.status).isEqualTo(400)
+        assertThat(response.status).isEqualTo(status)
         assertThat(error.propertyNames()).containsExactly("code", "category", "requestId")
-        assertThat(error.get("code").asString()).isEqualTo("INVALID_REQUEST")
+        assertThat(error.get("code").asString()).isEqualTo(code)
         assertThat(error.get("category").asString()).isEqualTo("VALIDATION")
     }
 

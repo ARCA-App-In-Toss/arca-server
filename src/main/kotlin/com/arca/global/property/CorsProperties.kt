@@ -1,4 +1,4 @@
-package com.arca.global.config
+package com.arca.global.property
 
 import org.springframework.boot.context.properties.ConfigurationProperties
 

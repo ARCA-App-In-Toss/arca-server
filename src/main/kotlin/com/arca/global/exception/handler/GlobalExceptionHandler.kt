@@ -1,8 +1,12 @@
 package com.arca.global.exception.handler
 
 import com.arca.global.exception.domain.ExceptionCode
+import com.arca.global.exception.domain.ExceptionCode.ENDPOINT_NOT_FOUND
 import com.arca.global.exception.domain.ExceptionCode.INTERNAL_ERROR
 import com.arca.global.exception.domain.ExceptionCode.INVALID_REQUEST
+import com.arca.global.exception.domain.ExceptionCode.MEDIA_TYPE_NOT_ACCEPTABLE
+import com.arca.global.exception.domain.ExceptionCode.MEDIA_TYPE_NOT_SUPPORTED
+import com.arca.global.exception.domain.ExceptionCode.METHOD_NOT_SUPPORTED
 import com.arca.global.exception.domain.ExceptionRecovery
 import com.arca.global.exception.domain.RestApiException
 import com.arca.global.exception.dto.response.ErrorResponse
@@ -87,20 +91,54 @@ class GlobalExceptionHandler {
         )
     }
 
-    @ExceptionHandler(
-        NoResourceFoundException::class,
-        HttpRequestMethodNotSupportedException::class,
-        HttpMediaTypeNotSupportedException::class,
-        HttpMediaTypeNotAcceptableException::class
-    )
-    fun handleUnsupportedRequestException(
-        e: Exception,
+    @ExceptionHandler(NoResourceFoundException::class)
+    fun handleNoResourceFoundException(
+        e: NoResourceFoundException,
         @RequestAttribute(REQUEST_ID_ATTRIBUTE) requestId: String
     ): ResponseEntity<ErrorResponse> {
-        log.warn("Unsupported request exception occurred. requestId = {}, type = {}", requestId, e.javaClass.simpleName)
+        log.warn("No resource found exception occurred. requestId = {}, path = {}", requestId, e.resourcePath)
 
         return makeExceptionResponse(
-            exceptionCode = INVALID_REQUEST,
+            exceptionCode = ENDPOINT_NOT_FOUND,
+            requestId = requestId
+        )
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException::class)
+    fun handleHttpRequestMethodNotSupportedException(
+        e: HttpRequestMethodNotSupportedException,
+        @RequestAttribute(REQUEST_ID_ATTRIBUTE) requestId: String
+    ): ResponseEntity<ErrorResponse> {
+        log.warn("Http request method not supported exception occurred. requestId = {}, method = {}", requestId, e.method)
+
+        return makeExceptionResponse(
+            exceptionCode = METHOD_NOT_SUPPORTED,
+            requestId = requestId
+        )
+    }
+
+    @ExceptionHandler(HttpMediaTypeNotSupportedException::class)
+    fun handleHttpMediaTypeNotSupportedException(
+        e: HttpMediaTypeNotSupportedException,
+        @RequestAttribute(REQUEST_ID_ATTRIBUTE) requestId: String
+    ): ResponseEntity<ErrorResponse> {
+        log.warn("Http media type not supported exception occurred. requestId = {}, contentType = {}", requestId, e.contentType)
+
+        return makeExceptionResponse(
+            exceptionCode = MEDIA_TYPE_NOT_SUPPORTED,
+            requestId = requestId
+        )
+    }
+
+    @ExceptionHandler(HttpMediaTypeNotAcceptableException::class)
+    fun handleHttpMediaTypeNotAcceptableException(
+        e: HttpMediaTypeNotAcceptableException,
+        @RequestAttribute(REQUEST_ID_ATTRIBUTE) requestId: String
+    ): ResponseEntity<ErrorResponse> {
+        log.warn("Http media type not acceptable exception occurred. requestId = {}", requestId)
+
+        return makeExceptionResponse(
+            exceptionCode = MEDIA_TYPE_NOT_ACCEPTABLE,
             requestId = requestId
         )
     }
