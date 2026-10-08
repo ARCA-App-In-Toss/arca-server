@@ -13,7 +13,9 @@ paths:
 src/main/kotlin/com/arca/
 ├── ArcaApplication.kt
 ├── global/              # 공통 설정(config), 예외(exception), 어노테이션, HTTP, 공용 infra
-└── auth/                # 인증 (세션 교환, 토큰 검증, 세션 mode 검사)
+├── auth/                # 인증 (세션 교환, 토큰 검증, 세션 mode 검사)
+├── consent/             # 동의 (필수 정책 목록)
+└── passenger/           # 승객 (profile)
 ```
 
 도메인 패키지는 생길 때마다 위 트리에 `{domain}/  # 한 줄 설명` 형태로 추가한다.
