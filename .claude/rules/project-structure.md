@@ -23,6 +23,7 @@ src/main/kotlin/com/arca/
 ```
 global/
 ├── config/                          # 스프링 설정 (CORS, Swagger, ArgumentResolver 등)
+├── property/                        # @ConfigurationProperties 설정 묶음 (CorsProperties, AuthSessionProperties)
 ├── annotation/                      # 커스텀 어노테이션 (검증용 등)
 ├── infra/                           # 어노테이션 구현체, 서블릿 필터, 공용 헬퍼
 └── exception/

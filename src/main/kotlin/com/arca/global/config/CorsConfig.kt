@@ -1,7 +1,7 @@
 package com.arca.global.config
 
+import com.arca.global.property.CorsProperties
 import org.springframework.context.annotation.Configuration
-import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpHeaders.AUTHORIZATION
 import org.springframework.http.HttpHeaders.CONTENT_TYPE
 import org.springframework.http.HttpHeaders.RETRY_AFTER

@@ -258,4 +258,4 @@ companion object {
 - 의존성은 주 생성자의 `private val` 파라미터로 주입하라. `lateinit var` 필드 주입을 쓰지 마라
 - 스프링 빈 클래스는 `kotlin-spring` 플러그인이 `open`으로 만든다. 직접 `open`을 붙이지 마라
 - `@Value`의 `$`는 문자열 템플릿과 겹치므로 `\$`로 이스케이프하라 (`@Value("\${cors.allowed-origin}")`)
-- 설정 묶음은 `@ConfigurationProperties` + data class로 선언하라
+- 설정 묶음은 `@ConfigurationProperties` + data class로 선언하고 `global/property/`에 둔다 (`{대상}Properties`)
