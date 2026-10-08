@@ -11,6 +11,7 @@ import org.springframework.http.HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN
 import org.springframework.http.HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS
 import org.springframework.http.HttpHeaders.ACCESS_CONTROL_REQUEST_HEADERS
 import org.springframework.http.HttpHeaders.ACCESS_CONTROL_REQUEST_METHOD
+import org.springframework.http.HttpHeaders.AUTHORIZATION
 import org.springframework.http.HttpHeaders.ORIGIN
 import org.springframework.http.HttpHeaders.RETRY_AFTER
 import org.springframework.test.web.servlet.MockMvc
@@ -44,17 +45,17 @@ class CorsConfigTest(
         }
 
         @Test
-        fun preflight에서_멱등성_키_헤더를_허용한다() {
+        fun preflight에서_인증_헤더를_허용한다() {
             //when
             val response = mockMvc.options(PATH) {
                 header(ORIGIN, allowedOrigin)
                 header(ACCESS_CONTROL_REQUEST_METHOD, "POST")
-                header(ACCESS_CONTROL_REQUEST_HEADERS, IDEMPOTENCY_KEY)
+                header(ACCESS_CONTROL_REQUEST_HEADERS, AUTHORIZATION)
             }.andReturn().response
 
             //then
             assertThat(response.status).isEqualTo(200)
-            assertThat(response.getHeader(ACCESS_CONTROL_ALLOW_HEADERS)).contains(IDEMPOTENCY_KEY)
+            assertThat(response.getHeader(ACCESS_CONTROL_ALLOW_HEADERS)).containsIgnoringCase(AUTHORIZATION)
         }
 
         @Test
@@ -62,7 +63,7 @@ class CorsConfigTest(
             //when
             val response = mockMvc.options(PATH) {
                 header(ORIGIN, allowedOrigin)
-                header(ACCESS_CONTROL_REQUEST_METHOD, "DELETE")
+                header(ACCESS_CONTROL_REQUEST_METHOD, "PATCH")
             }.andReturn().response
 
             //then
@@ -122,7 +123,6 @@ class CorsConfigTest(
 
     companion object {
         private const val PATH = "/v1/test"
-        private const val IDEMPOTENCY_KEY = "Idempotency-Key"
         private const val DISALLOWED_ORIGIN = "https://evil.example.com"
         private const val WILDCARD_ORIGIN = "*"
     }

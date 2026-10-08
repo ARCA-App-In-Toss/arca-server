@@ -20,9 +20,9 @@ paths:
 ## 요청 이름
 
 - 요청 이름은 API 계약의 표기를 그대로 따른다
-- 경로는 케밥 케이스로 써라 (`/answer-write-commands`)
-- 경로 변수와 쿼리 파라미터는 카멜 케이스다 (`{ticketId}`, `excerptProfile`). Kotlin 파라미터 이름과 같게 짓고 이름을 따로 명시하지 않는다 (`@PathVariable ticketId: String`)
-- 헤더는 HTTP 표기 그대로 쓰고 이름을 명시하라 (`@RequestHeader("Idempotency-Key") idempotencyKey: UUID`)
+- 경로는 케밥 케이스로 써라 (`/event-batches`)
+- 경로 변수와 쿼리 파라미터는 카멜 케이스다 (`{answerId}`, `excerptProfile`). Kotlin 파라미터 이름과 같게 짓고 이름을 따로 명시하지 않는다 (`@PathVariable answerId: String`)
+- 헤더는 HTTP 표기 그대로 쓰고 이름을 명시하라 (`@RequestHeader("Accept-Language") acceptLanguage: String`)
 
 ## 함수 형식
 

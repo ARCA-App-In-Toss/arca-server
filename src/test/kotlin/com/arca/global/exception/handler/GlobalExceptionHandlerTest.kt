@@ -2,7 +2,6 @@ package com.arca.global.exception.handler
 
 import com.arca.global.infra.IntegrationTest
 import com.arca.global.infra.TestController.Companion.RETRY_AFTER_SECONDS
-import com.arca.global.infra.TestController.Companion.TICKET_ID
 import com.arca.global.infra.TestController.Companion.UNEXPECTED_MESSAGE
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Nested
@@ -69,16 +68,15 @@ class GlobalExceptionHandlerTest(
         }
 
         @Test
-        fun 런타임_값을_실은_recovery를_내보낸다() {
+        fun 값이_없는_recovery_필드는_내보내지_않는다() {
             //when
-            val response = mockMvc.get("$PATH/exceptions/command-pending").andReturn().response
+            val response = mockMvc.get("$PATH/exceptions/date-changed").andReturn().response
 
             //then
             val recovery = errorOf(response).get("recovery")
-            assertThat(response.status).isEqualTo(409)
-            assertThat(recovery.propertyNames()).containsExactly("kind", "ticketId")
-            assertThat(recovery.get("kind").asString()).isEqualTo("QUERY_COMMAND")
-            assertThat(recovery.get("ticketId").asString()).isEqualTo(TICKET_ID)
+            assertThat(response.status).isEqualTo(422)
+            assertThat(recovery.propertyNames()).containsExactly("kind")
+            assertThat(recovery.get("kind").asString()).isEqualTo("REFRESH_TODAY")
         }
 
         @Test
@@ -179,7 +177,7 @@ class GlobalExceptionHandlerTest(
         fun 헤더_형식이_다를_때() {
             //when
             val response = mockMvc.get("$PATH/items/1") {
-                header(IDEMPOTENCY_KEY, "not-a-uuid")
+                header(TEST_ID, "not-a-uuid")
             }.andReturn().response
 
             //then
@@ -190,7 +188,7 @@ class GlobalExceptionHandlerTest(
         fun 경로_변수_타입이_다를_때() {
             //when
             val response = mockMvc.get("$PATH/items/abc") {
-                header(IDEMPOTENCY_KEY, IDEMPOTENCY_KEY_VALUE)
+                header(TEST_ID, TEST_ID_VALUE)
             }.andReturn().response
 
             //then
@@ -302,7 +300,7 @@ class GlobalExceptionHandlerTest(
 
     companion object {
         private const val PATH = "/v1/test"
-        private const val IDEMPOTENCY_KEY = "Idempotency-Key"
-        private const val IDEMPOTENCY_KEY_VALUE = "3f2b8c1e-6d4a-4f0b-9c7e-1a2b3c4d5e6f"
+        private const val TEST_ID = "X-Test-Id"
+        private const val TEST_ID_VALUE = "3f2b8c1e-6d4a-4f0b-9c7e-1a2b3c4d5e6f"
     }
 }

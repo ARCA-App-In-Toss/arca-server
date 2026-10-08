@@ -1,6 +1,5 @@
 package com.arca.global.exception.domain
 
-import com.arca.global.exception.domain.ExceptionRecoveryKind.QUERY_COMMAND
 import com.arca.global.exception.domain.ExceptionRecoveryKind.REESTABLISH_SESSION
 import com.arca.global.exception.domain.ExceptionRecoveryKind.REFRESH_POLICIES
 import com.arca.global.exception.domain.ExceptionRecoveryKind.REFRESH_TODAY
@@ -31,13 +30,12 @@ enum class ExceptionCode(
     MEDIA_TYPE_NOT_ACCEPTABLE(NOT_ACCEPTABLE, ExceptionCategory.VALIDATION),
     PASSENGER_NOT_FOUND(NOT_FOUND, ExceptionCategory.VALIDATION),
     ANSWER_NOT_FOUND(NOT_FOUND, ExceptionCategory.VALIDATION),
-    COMMAND_NOT_FOUND(NOT_FOUND, ExceptionCategory.VALIDATION),
     CONSENT_REQUIRED(UNPROCESSABLE_ENTITY, ExceptionCategory.VALIDATION),
     POLICY_VERSION_CHANGED(UNPROCESSABLE_ENTITY, ExceptionCategory.VALIDATION, REFRESH_POLICIES),
     NICKNAME_INVALID(UNPROCESSABLE_ENTITY, ExceptionCategory.VALIDATION),
     DATE_CHANGED(UNPROCESSABLE_ENTITY, ExceptionCategory.VALIDATION, REFRESH_TODAY),
     SEMA_REPLACED(UNPROCESSABLE_ENTITY, ExceptionCategory.VALIDATION, REFRESH_TODAY),
-    COMMAND_PAYLOAD_MISMATCH(UNPROCESSABLE_ENTITY, ExceptionCategory.VALIDATION),
+    ANSWER_CONTENT_INVALID(UNPROCESSABLE_ENTITY, ExceptionCategory.VALIDATION),
 
     // 인증 (AUTH)
     ANONYMOUS_KEY_INVALID(UNAUTHORIZED, ExceptionCategory.AUTH),
@@ -49,9 +47,6 @@ enum class ExceptionCode(
     PASSENGER_ALREADY_EXISTS(HttpStatus.CONFLICT, ExceptionCategory.CONFLICT),
     ANSWER_ALREADY_EXISTS(HttpStatus.CONFLICT, ExceptionCategory.CONFLICT),
     REVISION_CONFLICT(HttpStatus.CONFLICT, ExceptionCategory.CONFLICT),
-    COMMAND_ALREADY_PENDING(HttpStatus.CONFLICT, ExceptionCategory.CONFLICT, QUERY_COMMAND),
-    IDEMPOTENCY_KEY_REUSED(HttpStatus.CONFLICT, ExceptionCategory.CONFLICT),
-    OPERATION_RESULT_EXPIRED(HttpStatus.CONFLICT, ExceptionCategory.CONFLICT),
 
     // 요청 제한 (RATE_LIMIT)
     RATE_LIMITED(TOO_MANY_REQUESTS, ExceptionCategory.RATE_LIMIT),

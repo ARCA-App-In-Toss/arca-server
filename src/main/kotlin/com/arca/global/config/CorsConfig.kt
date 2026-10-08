@@ -24,8 +24,7 @@ class CorsConfig(
 
     companion object {
         private const val PATH_PATTERN = "/v1/**"
-        private const val IDEMPOTENCY_KEY = "Idempotency-Key"
-        private val ALLOWED_METHODS = arrayOf("GET", "POST", "PUT")
-        private val ALLOWED_HEADERS = arrayOf(AUTHORIZATION, CONTENT_TYPE, IDEMPOTENCY_KEY)
+        private val ALLOWED_METHODS = arrayOf("GET", "POST", "PUT", "DELETE")
+        private val ALLOWED_HEADERS = arrayOf(AUTHORIZATION, CONTENT_TYPE)
     }
 }

@@ -37,10 +37,9 @@ Controller → Service → Repository 순서를 따른다 (Facade 레이어 없�
 - `ExceptionCode` 항목은 HTTP 상태와 category(`VALIDATION`, `AUTH`, `CONFLICT`, `RATE_LIMIT`, `MAINTENANCE`)를 가진다. code별 조합은 계약에 고정돼 있다
 - `ExceptionCode`는 category별 주석 그룹을 유지하라 (`// 인증 (AUTH)`)
 - 에러 응답은 `{"error": {"code", "category", "requestId"}}` 형태다. `message`, `details`, stack 같은 자유 형식 필드를 넣지 마라. 사용자에게 보일 문구는 클라이언트가 code로 정한다
-  - `recovery`는 계약이 정한 code에만 붙인다. 런타임 값(`ticketId`, 정책 목록)이 필요하면 `RestApiException`에 실어 던진다
+  - `recovery`는 계약이 정한 code에만 붙인다. 런타임 값(정책 목록)이 필요하면 `RestApiException`에 실어 던진다
   - `retryAfterSeconds`는 `RATE_LIMITED`, `MAINTENANCE`에만 붙이고 `Retry-After` 헤더와 같은 값을 쓴다
 - 요청 형식 오류(JSON 파싱, 필수 필드 누락, 타입 불일치, 추가 필드, Bean Validation 실패)는 모두 `400 INVALID_REQUEST`다
-- command가 적용되지 않은 결과(`NOT_APPLIED`)는 예외가 아니다. `200` 응답 body의 `state`와 `error`로 반환하라
 - `ExceptionCode` 항목은 개별 import로 식별자만 노출하라 (`ExceptionCode.XXX` 표기 대신 `XXX`)
   (`import com.arca.global.exception.domain.ExceptionCode.MEMBER_NOT_FOUND`)
   - 단 `ExceptionCode` 타입 자체를 참조할 때(파라미터 타입 등)는 타입을 import한다 (예: `GlobalExceptionHandler`)
@@ -165,7 +164,7 @@ return PostsResponse.of(...)
 - 패키지는 도메인 단위로 나눠라
 - 클래스는 PascalCase로 작성하라 (`MemberService`, `PostController`)
 - 함수는 camelCase + CRUD 동사를 사용하라 (`findByMemberId`, `createPost`, `deletePost`)
-- API 경로는 `/v1` 아래에 kebab-case로 작성하라. 리소스 이름과 단복수는 API 계약을 그대로 따른다 (`/v1/passenger`, `/v1/answers`, `/v1/answer-write-commands`)
+- API 경로는 `/v1` 아래에 kebab-case로 작성하라. 리소스 이름과 단복수는 API 계약을 그대로 따른다 (`/v1/passenger`, `/v1/answers`, `/v1/questions/today`)
 - 연속된 대문자를 쓰지 마라 (`lastSemesterGPA` 대신 `lastSemesterGpa`, `userID` 대신 `userId`)
 
 ### 클래스 타입 변수는 타입명을 그대로 써라

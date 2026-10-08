@@ -1,7 +1,7 @@
 package com.arca.global.exception.domain
 
 import com.arca.global.exception.domain.ExceptionCode.ANSWER_NOT_FOUND
-import com.arca.global.exception.domain.ExceptionCode.COMMAND_ALREADY_PENDING
+import com.arca.global.exception.domain.ExceptionCode.DATE_CHANGED
 import com.arca.global.exception.domain.ExceptionCode.INTERNAL_ERROR
 import com.arca.global.exception.domain.ExceptionCode.MAINTENANCE
 import com.arca.global.exception.domain.ExceptionCode.RATE_LIMITED
@@ -32,18 +32,18 @@ class RestApiExceptionTest {
         fun 계약이_정한_kind의_recovery를_실으면_생성된다() {
             //when
             val restApiException = RestApiException(
-                exceptionCode = COMMAND_ALREADY_PENDING,
-                exceptionRecovery = ExceptionRecovery.queryCommand(TICKET_ID)
+                exceptionCode = DATE_CHANGED,
+                exceptionRecovery = ExceptionRecovery.refreshToday()
             )
 
             //then
-            assertThat(restApiException.exceptionRecovery?.ticketId).isEqualTo(TICKET_ID)
+            assertThat(restApiException.exceptionRecovery?.kind).isEqualTo(ExceptionRecoveryKind.REFRESH_TODAY)
         }
 
         @Test
         fun recovery가_필수인_code를_recovery_없이_만들면_실패한다() {
             //when & then
-            assertThatThrownBy { RestApiException(COMMAND_ALREADY_PENDING) }
+            assertThatThrownBy { RestApiException(DATE_CHANGED) }
                 .isInstanceOf(IllegalStateException::class.java)
         }
 
@@ -103,7 +103,6 @@ class RestApiExceptionTest {
     }
 
     companion object {
-        private const val TICKET_ID = "ticket-1"
         private const val RETRY_AFTER_SECONDS = 30
     }
 }

@@ -1,7 +1,7 @@
 package com.arca.global.infra
 
 import com.arca.global.exception.domain.ExceptionCode.ANSWER_NOT_FOUND
-import com.arca.global.exception.domain.ExceptionCode.COMMAND_ALREADY_PENDING
+import com.arca.global.exception.domain.ExceptionCode.DATE_CHANGED
 import com.arca.global.exception.domain.ExceptionCode.RATE_LIMITED
 import com.arca.global.exception.domain.ExceptionCode.SESSION_RECOVERY_REQUIRED
 import com.arca.global.exception.domain.ExceptionRecovery
@@ -44,10 +44,10 @@ class TestController {
     @GetMapping("/items/{itemId}")
     fun getItem(
         @PathVariable itemId: Long,
-        @RequestHeader("Idempotency-Key") idempotencyKey: UUID
+        @RequestHeader("X-Test-Id") testId: UUID
     ): TestResponse {
         return TestResponse(
-            name = "$itemId $idempotencyKey",
+            name = "$itemId $testId",
             createdAt = Instant.parse(CREATED_AT)
         )
     }
@@ -65,11 +65,11 @@ class TestController {
         )
     }
 
-    @GetMapping("/exceptions/command-pending")
-    fun throwCommandPending(): TestResponse {
+    @GetMapping("/exceptions/date-changed")
+    fun throwDateChanged(): TestResponse {
         throw RestApiException(
-            exceptionCode = COMMAND_ALREADY_PENDING,
-            exceptionRecovery = ExceptionRecovery.queryCommand(TICKET_ID)
+            exceptionCode = DATE_CHANGED,
+            exceptionRecovery = ExceptionRecovery.refreshToday()
         )
     }
 
@@ -98,7 +98,6 @@ class TestController {
 
     companion object {
         const val CREATED_AT = "2026-09-13T14:59:00Z"
-        const val TICKET_ID = "ticket-1"
         const val RETRY_AFTER_SECONDS = 30
         const val UNEXPECTED_MESSAGE = "노출되면 안 되는 내부 원인"
     }
