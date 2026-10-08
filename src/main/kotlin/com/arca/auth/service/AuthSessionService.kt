@@ -2,10 +2,18 @@ package com.arca.auth.service
 
 import com.arca.auth.domain.AuthSession
 import com.arca.auth.domain.SessionMode
+import com.arca.auth.domain.SessionMode.PRE_PASSENGER
 import com.arca.auth.dto.internal.IssuedTokenDto
+import com.arca.auth.dto.request.CreateSessionRequest
+import com.arca.auth.dto.response.CreateSessionResponse
+import com.arca.auth.dto.response.SessionContextResponse
 import com.arca.auth.infra.AccessTokenGenerator
 import com.arca.auth.infra.AccessTokenHasher
+import com.arca.auth.infra.AnonymousKeyVerifier
 import com.arca.auth.repository.AuthSessionRepository
+import com.arca.consent.domain.ConsentPolicy
+import com.arca.consent.dto.response.ConsentPolicyResponse
+import com.arca.global.exception.domain.ExceptionCode.ANONYMOUS_KEY_INVALID
 import com.arca.global.exception.domain.ExceptionCode.SESSION_INVALID
 import com.arca.global.exception.domain.ExceptionCode.SESSION_RECOVERY_REQUIRED
 import com.arca.global.exception.domain.ExceptionRecovery
@@ -22,10 +30,32 @@ class AuthSessionService (
 
     private val accessTokenGenerator: AccessTokenGenerator,
     private val accessTokenHasher: AccessTokenHasher,
+    private val anonymousKeyVerifier: AnonymousKeyVerifier,
     private val authSessionProperties: AuthSessionProperties,
 
     private val clock: Clock
 ){
+    @Transactional
+    fun createSession(request: CreateSessionRequest): CreateSessionResponse {
+        if(!anonymousKeyVerifier.verify(request.anonymousKey)){
+            throw RestApiException(ANONYMOUS_KEY_INVALID)
+        }
+
+        val issuedTokenDto = issue(
+            sessionMode = PRE_PASSENGER,
+            passengerId = null
+        )
+
+        return CreateSessionResponse.of(
+            issuedTokenDto = issuedTokenDto,
+            context = SessionContextResponse.of(
+                sessionMode = PRE_PASSENGER,
+                passenger = null
+            ),
+            consentPolicies = ConsentPolicy.entries.map { ConsentPolicyResponse.from(it) }
+        )
+    }
+
     @Transactional
     fun issue(
         sessionMode: SessionMode,
