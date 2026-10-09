@@ -13,11 +13,12 @@ import jakarta.persistence.Table
 import java.time.Instant
 
 @Entity
-@Table(name = "auth_sessions")
+@Table(name = "auth_session")
 class AuthSession private constructor(
-    tokenHash: String,
-    sessionMode: SessionMode,
     memberId: Long?,
+    tokenHash: String,
+    anonymousKeyHash: String,
+    sessionMode: SessionMode,
     expiresAt: Instant,
     createdAt: Instant
 ) {
@@ -26,8 +27,16 @@ class AuthSession private constructor(
     var id: Long = 0L
         protected set
 
+    @Column(name = "member_id")
+    var memberId: Long? = memberId
+        protected set
+
     @Column(nullable = false, name = "token_hash")
     var tokenHash: String = tokenHash
+        protected set
+
+    @Column(nullable = false, name = "anonymous_key_hash")
+    var anonymousKeyHash: String = anonymousKeyHash
         protected set
 
     @Enumerated(STRING)
@@ -35,8 +44,8 @@ class AuthSession private constructor(
     var sessionMode: SessionMode = sessionMode
         protected set
 
-    @Column(name = "member_id")
-    var memberId: Long? = memberId
+    @Column(nullable = false, name = "created_at")
+    var createdAt: Instant = createdAt
         protected set
 
     @Column(nullable = false, name = "expires_at")
@@ -45,10 +54,6 @@ class AuthSession private constructor(
 
     @Column(name = "revoked_at")
     var revokedAt: Instant? = null
-        protected set
-
-    @Column(nullable = false, name = "created_at")
-    var createdAt: Instant = createdAt
         protected set
 
     fun revoke(now: Instant) {
@@ -71,9 +76,10 @@ class AuthSession private constructor(
 
     companion object {
         fun create(
-            tokenHash: String,
-            sessionMode: SessionMode,
             memberId: Long?,
+            tokenHash: String,
+            anonymousKeyHash: String,
+            sessionMode: SessionMode,
             expiresAt: Instant,
             createdAt: Instant
         ): AuthSession {
@@ -83,9 +89,10 @@ class AuthSession private constructor(
             )
 
             return AuthSession(
-                tokenHash = tokenHash,
-                sessionMode = sessionMode,
                 memberId = memberId,
+                tokenHash = tokenHash,
+                anonymousKeyHash = anonymousKeyHash,
+                sessionMode = sessionMode,
                 expiresAt = expiresAt,
                 createdAt = createdAt
             )

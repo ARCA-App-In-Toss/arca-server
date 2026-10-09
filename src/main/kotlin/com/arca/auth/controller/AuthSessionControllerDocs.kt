@@ -1,7 +1,7 @@
 package com.arca.auth.controller
 
 import com.arca.auth.dto.request.CreateSessionRequest
-import com.arca.auth.dto.response.CreateSessionResponse
+import com.arca.auth.dto.response.SessionResponse
 import com.arca.global.exception.dto.response.ErrorResponse
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
@@ -21,6 +21,7 @@ interface AuthSessionControllerDocs {
     @Operation(
         summary = "세션 교환",
         description = "앱인토스 익명 키를 검증하고 세션을 발급합니다. 회원을 만들지 않습니다.<br>" +
+            "활성 회원과 연결된 키는 ACTIVE 세션과 회원 profile을, 그 밖의 유효한 키는 GUEST 세션을 받습니다.<br>" +
             "🔓 <strong>인증 불필요</strong><br>"
     )
     @ApiResponses(
@@ -60,5 +61,5 @@ interface AuthSessionControllerDocs {
     )
     fun createSession(
         @Valid @RequestBody request: CreateSessionRequest
-    ): ResponseEntity<CreateSessionResponse>
+    ): ResponseEntity<SessionResponse>
 }

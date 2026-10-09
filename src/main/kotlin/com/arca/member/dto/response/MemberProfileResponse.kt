@@ -1,11 +1,12 @@
 package com.arca.member.dto.response
 
+import com.arca.member.domain.Member
 import io.swagger.v3.oas.annotations.media.Schema
 
 data class MemberProfileResponse(
     @field:Schema(
         description = "표시용 회원 코드",
-        example = "SYNTHETIC-001"
+        example = "ARCA-7K2QX"
     )
     val memberCode: String,
 
@@ -18,7 +19,17 @@ data class MemberProfileResponse(
 
     @field:Schema(
         description = "profile revision",
-        example = "r1"
+        example = "1"
     )
     val revision: String
-)
+) {
+    companion object {
+        fun from(member: Member): MemberProfileResponse {
+            return MemberProfileResponse(
+                memberCode = member.memberCode,
+                nickname = member.nickname,
+                revision = member.revision.toString()
+            )
+        }
+    }
+}

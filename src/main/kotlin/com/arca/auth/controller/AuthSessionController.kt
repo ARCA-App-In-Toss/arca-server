@@ -1,7 +1,7 @@
 package com.arca.auth.controller
 
 import com.arca.auth.dto.request.CreateSessionRequest
-import com.arca.auth.dto.response.CreateSessionResponse
+import com.arca.auth.dto.response.SessionResponse
 import com.arca.auth.service.AuthSessionService
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus.CREATED
@@ -20,7 +20,7 @@ class AuthSessionController (
     @PostMapping
     override fun createSession(
         @Valid @RequestBody request: CreateSessionRequest
-    ): ResponseEntity<CreateSessionResponse>{
+    ): ResponseEntity<SessionResponse>{
         val response = authSessionService.createSession(request)
         return ResponseEntity.status(CREATED).body(response)
     }
