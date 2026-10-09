@@ -3,7 +3,8 @@ package com.arca.global.infra
 import com.arca.auth.domain.SessionMode
 import com.arca.auth.domain.SessionMode.ACTIVE
 import com.arca.auth.domain.SessionMode.GUEST
-import com.arca.auth.infra.AccessTokenHasher
+import com.arca.auth.infra.AuthSessionIssuer
+import com.arca.auth.infra.Sha256Hasher
 import com.arca.auth.repository.AuthSessionRepository
 import com.arca.auth.service.AuthSessionService
 import com.arca.global.infra.AuthTestController.Companion.PUBLIC_BODY
@@ -26,7 +27,8 @@ class AuthInterceptorTest(
     private val authSessionRepository: AuthSessionRepository,
 
     private val mockMvc: MockMvc,
-    private val accessTokenHasher: AccessTokenHasher,
+    private val authSessionIssuer: AuthSessionIssuer,
+    private val sha256Hasher: Sha256Hasher,
     private val jsonMapper: JsonMapper
 ) {
 
@@ -79,7 +81,7 @@ class AuthInterceptorTest(
         fun 폐기된_토큰이면_SESSION_RECOVERY_REQUIRED와_recovery로_응답한다() {
             //given
             val accessToken = issueToken(ACTIVE, MEMBER_ID)
-            val authSession = checkNotNull(authSessionRepository.findByTokenHash(accessTokenHasher.hash(accessToken)))
+            val authSession = checkNotNull(authSessionRepository.findByTokenHash(sha256Hasher.hash(accessToken)))
             authSessionService.revoke(authSession.id)
 
             //when
@@ -154,9 +156,10 @@ class AuthInterceptorTest(
         sessionMode: SessionMode,
         memberId: Long?
     ): String {
-        return authSessionService.issue(
+        return authSessionIssuer.issue(
             sessionMode = sessionMode,
-            memberId = memberId
+            memberId = memberId,
+            anonymousKeyHash = ANONYMOUS_KEY_HASH
         ).accessToken
     }
 
@@ -179,5 +182,6 @@ class AuthInterceptorTest(
         private const val BEARER = "Bearer"
         private const val UNKNOWN_TOKEN = "unknown-token"
         private const val MEMBER_ID = 1L
+        private const val ANONYMOUS_KEY_HASH = "anonymous-key-hash"
     }
 }

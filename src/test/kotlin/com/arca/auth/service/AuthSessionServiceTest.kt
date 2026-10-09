@@ -2,15 +2,14 @@ package com.arca.auth.service
 
 import com.arca.auth.domain.AuthSession
 import com.arca.auth.domain.SessionMode.ACTIVE
-import com.arca.auth.domain.SessionMode.GUEST
 import com.arca.auth.fixture.AuthSessionFixture
-import com.arca.auth.infra.AccessTokenHasher
+import com.arca.auth.infra.AuthSessionIssuer
+import com.arca.auth.infra.Sha256Hasher
 import com.arca.auth.repository.AuthSessionRepository
 import com.arca.global.exception.domain.ExceptionCode.SESSION_INVALID
 import com.arca.global.exception.domain.ExceptionCode.SESSION_RECOVERY_REQUIRED
 import com.arca.global.exception.domain.RestApiException
 import com.arca.global.infra.IntegrationTest
-import com.arca.global.property.AuthSessionProperties
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.Nested
@@ -23,42 +22,9 @@ class AuthSessionServiceTest(
 
     private val authSessionRepository: AuthSessionRepository,
 
-    private val accessTokenHasher: AccessTokenHasher,
-    private val authSessionProperties: AuthSessionProperties
+    private val authSessionIssuer: AuthSessionIssuer,
+    private val sha256Hasher: Sha256Hasher
 ) {
-
-    @Nested
-    inner class 토큰을_발급하면 {
-
-        @Test
-        fun 원문_대신_해시를_저장한다() {
-            //when
-            val issuedTokenDto = authSessionService.issue(
-                sessionMode = ACTIVE,
-                memberId = MEMBER_ID
-            )
-
-            //then
-            val authSession = findByAccessToken(issuedTokenDto.accessToken)
-            assertThat(authSession.tokenHash).isNotEqualTo(issuedTokenDto.accessToken)
-            assertThat(authSession.sessionMode).isEqualTo(ACTIVE)
-            assertThat(authSession.memberId).isEqualTo(MEMBER_ID)
-        }
-
-        @Test
-        fun 만료_시각은_발급_시각에서_TTL만큼_뒤다() {
-            //when
-            val issuedTokenDto = authSessionService.issue(
-                sessionMode = GUEST,
-                memberId = null
-            )
-
-            //then
-            val authSession = findByAccessToken(issuedTokenDto.accessToken)
-            assertThat(authSession.expiresAt).isEqualTo(authSession.createdAt.plus(authSessionProperties.ttl))
-            assertThat(issuedTokenDto.expiresAt).isEqualTo(authSession.expiresAt)
-        }
-    }
 
     @Nested
     inner class 토큰으로_인증할_때 {
@@ -66,9 +32,10 @@ class AuthSessionServiceTest(
         @Test
         fun 발급한_토큰이면_세션을_돌려준다() {
             //given
-            val issuedTokenDto = authSessionService.issue(
+            val issuedTokenDto = authSessionIssuer.issue(
                 sessionMode = ACTIVE,
-                memberId = MEMBER_ID
+                memberId = MEMBER_ID,
+                anonymousKeyHash = ANONYMOUS_KEY_HASH
             )
 
             //when
@@ -90,9 +57,10 @@ class AuthSessionServiceTest(
         @Test
         fun 폐기된_토큰이면_SESSION_RECOVERY_REQUIRED() {
             //given
-            val issuedTokenDto = authSessionService.issue(
+            val issuedTokenDto = authSessionIssuer.issue(
                 sessionMode = ACTIVE,
-                memberId = MEMBER_ID
+                memberId = MEMBER_ID,
+                anonymousKeyHash = ANONYMOUS_KEY_HASH
             )
             authSessionService.revoke(findByAccessToken(issuedTokenDto.accessToken).id)
 
@@ -106,7 +74,7 @@ class AuthSessionServiceTest(
         fun 만료된_토큰이면_SESSION_RECOVERY_REQUIRED() {
             //given
             val authSession = AuthSessionFixture.createActiveSession(
-                accessTokenHasher.hash(EXPIRED_TOKEN),
+                sha256Hasher.hash(EXPIRED_TOKEN),
                 Instant.parse(EXPIRED_AT)
             )
             authSessionRepository.save(authSession)
@@ -124,9 +92,10 @@ class AuthSessionServiceTest(
         @Test
         fun 폐기_시각을_기록한다() {
             //given
-            val issuedTokenDto = authSessionService.issue(
+            val issuedTokenDto = authSessionIssuer.issue(
                 sessionMode = ACTIVE,
-                memberId = MEMBER_ID
+                memberId = MEMBER_ID,
+                anonymousKeyHash = ANONYMOUS_KEY_HASH
             )
             val authSession = findByAccessToken(issuedTokenDto.accessToken)
 
@@ -147,11 +116,12 @@ class AuthSessionServiceTest(
     }
 
     private fun findByAccessToken(accessToken: String): AuthSession {
-        return checkNotNull(authSessionRepository.findByTokenHash(accessTokenHasher.hash(accessToken)))
+        return checkNotNull(authSessionRepository.findByTokenHash(sha256Hasher.hash(accessToken)))
     }
 
     companion object {
         private const val MEMBER_ID = 1L
+        private const val ANONYMOUS_KEY_HASH = "anonymous-key-hash"
         private const val UNKNOWN_SESSION_ID = -1L
         private const val UNKNOWN_TOKEN = "unknown-token"
         private const val EXPIRED_TOKEN = "expired-token"
