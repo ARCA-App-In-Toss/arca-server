@@ -18,11 +18,11 @@ paths:
 
 ## SQL 스타일 (MySQL / InnoDB)
 
-- 테이블·컬럼명은 snake_case (`course_schedules`, `current_enrollment`)
+- 테이블·컬럼명은 snake_case (`course_schedule`, `current_enrollment`). 테이블명은 단수형이다
 - 스토리지 엔진: `ENGINE=InnoDB`
 - PK: `id BIGINT AUTO_INCREMENT PRIMARY KEY`
 - FK 컬럼: `{참조테이블}_id` (`course_id`, `member_id`) + `FOREIGN KEY ... REFERENCES ...`
 - timestamp: `DATETIME(6)` (MySQL `DATETIME`은 소수 초를 반올림해 `Instant` 왕복 값이 달라진다), 시간: `TIME`
 - enum: `VARCHAR(50)` (`@Enumerated(EnumType.STRING)`과 매핑, CHECK 제약은 쓰지 않음)
-- 인덱스: 테이블 정의 안에 `INDEX idx_{용도} (컬럼)` 인라인 선언
+- 인덱스: 테이블 정의 안에 `INDEX idx_{용도} (컬럼)` 인라인 선언. H2는 인덱스 이름이 스키마 전체에서 유일해야 하므로, 다른 테이블과 겹칠 수 있는 이름은 테이블명을 붙인다 (`idx_consent_member_id`)
 - 전문 검색: `FULLTEXT INDEX ft_idx_{용도} (컬럼들) WITH PARSER ngram`

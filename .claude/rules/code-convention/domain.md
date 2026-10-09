@@ -31,7 +31,7 @@ paths:
 
 ```kotlin
 @Entity
-@Table(name = "posts")
+@Table(name = "post")
 class Post private constructor(
     member: Member,
     title: String
@@ -70,7 +70,7 @@ class Post private constructor(
 
 ## DB 매핑
 
-- Entity 클래스명과 테이블명이 다르면 `@Table(name = "...")`을 명시하라 (테이블명은 snake_case 복수형)
+- Entity 클래스명과 테이블명이 다르면 `@Table(name = "...")`을 명시하라 (테이블명은 snake_case 단수형)
 - 컬럼명은 `@Column(name = "snake_case", ...)`으로 명시하라 (`@Column(name = "view_count", nullable = false)`)
 - 컬럼명은 필드명을 snake_case로 옮긴 것이어야 한다. 필드는 `title`인데 컬럼은 `post_title`처럼 어긋나게 두지 마라
   (필드명 규칙은 `common.md`의 "필드명에 클래스명을 반복하지 마라"를 따른다)
