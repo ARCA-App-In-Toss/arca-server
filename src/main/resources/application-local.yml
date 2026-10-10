@@ -21,6 +21,7 @@ spring:
     locations:
       - classpath:database/migration
       - classpath:database/seed
+      - classpath:database/fake-seed
 
 cors:
   allowed-origins:

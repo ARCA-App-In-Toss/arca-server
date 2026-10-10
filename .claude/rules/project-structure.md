@@ -15,7 +15,10 @@ src/main/kotlin/com/arca/
 ├── global/              # 공통 설정(config), 예외(exception), 어노테이션, HTTP, 공용 infra
 ├── auth/                # 인증 (세션 교환, 토큰 검증, 세션 mode 검사)
 ├── consent/             # 동의 (필수 정책 목록, 동의 기록)
-└── member/              # 회원 (가입, profile, 닉네임)
+├── member/              # 회원 (가입, profile, 닉네임)
+├── question/            # 오늘의 질문 (질문, 오늘 조회)
+├── semaphore/           # 세마포어 (계약 용어 SEMA. 기본, 대체 질문 묶음과 KST 날짜 편성)
+└── answer/              # 답변 (아직 AnswerState, AnswerCountResponse만 있다. #16에서 채운다)
 ```
 
 도메인 패키지는 생길 때마다 위 트리에 `{domain}/  # 한 줄 설명` 형태로 추가한다.

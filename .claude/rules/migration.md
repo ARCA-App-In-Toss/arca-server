@@ -9,7 +9,10 @@ paths:
 ## Flyway 파일
 
 - 스키마 마이그레이션: `src/main/resources/database/migration/` (예: `V0_0__init_table.sql`)
-- 시드 데이터: `src/main/resources/database/seed/` (예: `V0_1__insert_course.sql`)
+- 시드 데이터: `src/main/resources/database/seed/` (예: `V0_1__insert_course.sql`). local, test, prod 모두 실행한다
+- local 전용 가짜 데이터: `src/main/resources/database/fake-seed/`. `application-local.yml`에만 등록해 test, prod에서는 실행하지 않는다
+  - 운영 콘텐츠가 아닌 합성값만 넣는다. 테스트는 이 시드에 기대지 않고 Fixture로 데이터를 준비한다
+  - 버전 번호는 migration, seed와 같은 이름 공간이다. 겹치지 않게 다음 번호를 쓴다 (prod에는 그 번호가 비어 있게 되지만 Flyway는 문제 삼지 않는다)
 - 파일명: `V{major}_{minor}__{description}.sql` (버전 숫자 사이 `_` 1개, 이름 앞 `__` 2개, description은 snake_case)
 - 적용된 파일은 절대 수정·삭제하지 마라 (Flyway checksum 실패). 변경은 항상 새 버전 파일로 추가하라
 - 각 SQL 문 앞에 목적을 주석으로 설명하라

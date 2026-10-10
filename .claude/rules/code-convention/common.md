@@ -219,6 +219,8 @@ class Post {
 
 응답 DTO도 같다. `PostResponse`가 표현하는 대상이 게시글이므로 `postTitle`이 아니라 `title`이다.
 
+Entity는 아래 예외 3(계약 필드명)과 무관하게 항상 이 규칙을 따른다. 계약이 `semaCode`여도 Entity 필드는 `Semaphore.code`이고, 계약 이름은 DTO에서 맞춘다 (`semaCode = semaphore.code`).
+
 예외는 셋이다.
 
 1. **다른 엔티티에서 온 값은 출처를 밝힌다.** `PostResponse.memberNickname`은 게시글이 아니라 회원의 값이다
