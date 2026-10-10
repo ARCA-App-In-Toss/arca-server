@@ -6,11 +6,11 @@ import java.util.HexFormat
 import kotlin.text.Charsets.UTF_8
 
 @Component
-class AccessTokenHasher {
+class Sha256Hasher {
 
-    fun hash(accessToken: String): String {
+    fun hash(value: String): String {
         val messageDigest = MessageDigest.getInstance(HASH_ALGORITHM)
-        val digest = messageDigest.digest(accessToken.toByteArray(UTF_8))
+        val digest = messageDigest.digest(value.toByteArray(UTF_8))
 
         return HEX_FORMAT.formatHex(digest)
     }
