@@ -10,6 +10,7 @@ import com.arca.auth.fixture.AuthSessionFixture
 import com.arca.global.exception.domain.ExceptionCode.ANSWER_ALREADY_EXISTS
 import com.arca.global.exception.domain.ExceptionCode.ANSWER_CONTENT_INVALID
 import com.arca.global.exception.domain.ExceptionCode.ANSWER_NOT_FOUND
+import com.arca.global.exception.domain.ExceptionCode.CURSOR_INVALID
 import com.arca.global.exception.domain.ExceptionCode.DATE_CHANGED
 import com.arca.global.exception.domain.ExceptionCode.MEMBER_NOT_FOUND
 import com.arca.global.exception.domain.ExceptionCode.SEMA_NOT_FOUND
@@ -364,6 +365,234 @@ class AnswerServiceTest(
     }
 
     @Nested
+    inner class 기록_목록을_조회할_때 {
+
+        @Test
+        fun 답변이_없으면_빈_목록과_null_cursor를_돌려준다() {
+            //when
+            val response = answerService.getAnswers(activeSession(), null)
+
+            //then
+            assertThat(response.items).isEmpty()
+            assertThat(response.nextCursor).isNull()
+        }
+
+        @Test
+        fun 스무_개면_한_페이지에_모두_담고_cursor는_null이다() {
+            //given
+            val answers = saveAnswers(PAGE_SIZE)
+
+            //when
+            val response = answerService.getAnswers(activeSession(), null)
+
+            //then
+            assertThat(response.items).hasSize(PAGE_SIZE)
+            assertThat(response.nextCursor).isNull()
+            assertThat(response.items.first().answerId).isEqualTo(answers.last().id.toString())
+        }
+
+        @Test
+        fun 스물한_개면_두_페이지에_나눠_최신순으로_중복_누락_없이_돌려준다() {
+            //given
+            val answers = saveAnswers(PAGE_SIZE + 1)
+
+            //when
+            val firstPage = answerService.getAnswers(activeSession(), null)
+            val secondPage = answerService.getAnswers(activeSession(), firstPage.nextCursor)
+
+            //then
+            assertThat(firstPage.items).hasSize(PAGE_SIZE)
+            assertThat(firstPage.nextCursor).isEqualTo(firstPage.items.last().answerId)
+            assertThat(secondPage.items).hasSize(1)
+            assertThat(secondPage.nextCursor).isNull()
+            assertThat(firstPage.items + secondPage.items)
+                .extracting<String> { it.answerId }
+                .containsExactlyElementsOf(answers.reversed().map { it.id.toString() })
+        }
+
+        @Test
+        fun 항목은_답변한_질문과_SEMA를_담는다() {
+            //given
+            val answer = saveTodayAnswer()
+
+            //when
+            val response = answerService.getAnswers(activeSession(), null)
+
+            //then
+            val item = response.items.single()
+            assertThat(item.answerId).isEqualTo(answer.id.toString())
+            assertThat(item.dailySemaId).isEqualTo(today.toString())
+            assertThat(item.semaId).isEqualTo(answer.semaphore.id.toString())
+            assertThat(item.semaCode).isEqualTo(TODAY_CODE)
+            assertThat(item.createdDateKst).isEqualTo(today)
+            assertThat(item.question.questionId).isEqualTo(answer.question.id.toString())
+            assertThat(item.question.text).isEqualTo(PRIMARY_CONTENT)
+            assertThat(item.isEdited).isFalse()
+        }
+
+        @Test
+        fun 이어_보는_중에_쓴_답변은_다음_페이지에_끼지_않는다() {
+            //given
+            val answers = saveAnswers(PAGE_SIZE + 1)
+            val firstPage = answerService.getAnswers(activeSession(), null)
+            answerRepository.save(AnswerFixture.createAnswer(member, answers.first().semaphore, today.plusDays(1)))
+
+            //when
+            val secondPage = answerService.getAnswers(activeSession(), firstPage.nextCursor)
+
+            //then
+            assertThat(secondPage.items)
+                .extracting<String> { it.answerId }
+                .containsExactly(answers.first().id.toString())
+        }
+
+        @Test
+        fun 마지막으로_본_답변을_지워도_그_cursor로_다음_페이지를_이어_받는다() {
+            //given
+            val answers = saveAnswers(PAGE_SIZE + 1)
+            val firstPage = answerService.getAnswers(activeSession(), null)
+            answerService.deleteAnswer(activeSession(), checkNotNull(firstPage.nextCursor).toLong())
+            entityManager.flush()
+
+            //when
+            val secondPage = answerService.getAnswers(activeSession(), firstPage.nextCursor)
+
+            //then
+            assertThat(secondPage.items)
+                .extracting<String> { it.answerId }
+                .containsExactly(answers.first().id.toString())
+        }
+
+        @Test
+        fun 이어_보는_중에_수정한_답변은_최신_내용으로_나온다() {
+            //given
+            val answers = saveAnswers(PAGE_SIZE + 1)
+            val firstPage = answerService.getAnswers(activeSession(), null)
+            answerService.updateAnswer(activeSession(), answers.first().id, UpdateAnswerRequest(UPDATED_CONTENT))
+            entityManager.flush()
+
+            //when
+            val secondPage = answerService.getAnswers(activeSession(), firstPage.nextCursor)
+
+            //then
+            val item = secondPage.items.single()
+            assertThat(item.isEdited).isTrue()
+            assertThat(item.updatedAt).isNotEqualTo(item.createdAt)
+        }
+
+        @Test
+        fun 다른_회원의_답변은_목록에_없다() {
+            //given
+            val answer = saveTodayAnswer()
+            val otherMember = memberRepository.save(MemberFixture.createMemberWithDetails(OTHER_MEMBER_CODE, OTHER_ANONYMOUS_KEY_HASH))
+            answerRepository.save(AnswerFixture.createAnswer(otherMember, answer.semaphore, today))
+
+            //when
+            val response = answerService.getAnswers(activeSession(), null)
+
+            //then
+            assertThat(response.items)
+                .extracting<String> { it.answerId }
+                .containsExactly(answer.id.toString())
+        }
+
+        @Test
+        fun 다른_회원_답변의_ID를_cursor로_보내도_자기_답변만_나온다() {
+            //given
+            val answer = saveTodayAnswer()
+            val otherMember = memberRepository.save(MemberFixture.createMemberWithDetails(OTHER_MEMBER_CODE, OTHER_ANONYMOUS_KEY_HASH))
+            val otherAnswer = answerRepository.save(AnswerFixture.createAnswer(otherMember, answer.semaphore, today))
+
+            //when
+            val response = answerService.getAnswers(activeSession(), otherAnswer.id.toString())
+
+            //then
+            assertThat(response.items)
+                .extracting<String> { it.answerId }
+                .containsExactly(answer.id.toString())
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = ["abc", "0", "-1", "", " 1", "1.5"])
+        fun 형식이_틀린_cursor면_CURSOR_INVALID(cursor: String) {
+            //when, then
+            assertThatThrownBy { answerService.getAnswers(activeSession(), cursor) }
+                .isInstanceOf(RestApiException::class.java)
+                .hasFieldOrPropertyWithValue("exceptionCode", CURSOR_INVALID)
+        }
+
+        @Test
+        fun GUEST_세션이면_MEMBER_NOT_FOUND() {
+            //when, then
+            assertThatThrownBy { answerService.getAnswers(AuthSessionFixture.createGuestSession(), null) }
+                .isInstanceOf(RestApiException::class.java)
+                .hasFieldOrPropertyWithValue("exceptionCode", MEMBER_NOT_FOUND)
+        }
+    }
+
+    @Nested
+    inner class 기록_상세를_조회할_때 {
+
+        @Test
+        fun 본인_답변을_질문과_원문_그대로_돌려준다() {
+            //given
+            val answer = saveTodayAnswer()
+
+            //when
+            val response = answerService.getAnswer(activeSession(), answer.id)
+
+            //then
+            assertThat(response.answerId).isEqualTo(answer.id.toString())
+            assertThat(response.semaCode).isEqualTo(TODAY_CODE)
+            assertThat(response.question.text).isEqualTo(PRIMARY_CONTENT)
+            assertThat(response.content).isEqualTo(TODAY_ANSWER_CONTENT)
+        }
+
+        @Test
+        fun 없는_답변이면_ANSWER_NOT_FOUND() {
+            //when, then
+            assertThatThrownBy { answerService.getAnswer(activeSession(), UNKNOWN_ANSWER_ID) }
+                .isInstanceOf(RestApiException::class.java)
+                .hasFieldOrPropertyWithValue("exceptionCode", ANSWER_NOT_FOUND)
+        }
+
+        @Test
+        fun 지운_답변이면_ANSWER_NOT_FOUND() {
+            //given
+            val answer = saveTodayAnswer()
+            answerService.deleteAnswer(activeSession(), answer.id)
+
+            //when, then
+            assertThatThrownBy { answerService.getAnswer(activeSession(), answer.id) }
+                .isInstanceOf(RestApiException::class.java)
+                .hasFieldOrPropertyWithValue("exceptionCode", ANSWER_NOT_FOUND)
+        }
+
+        @Test
+        fun 다른_회원의_답변이면_ANSWER_NOT_FOUND() {
+            //given
+            val answer = saveTodayAnswer()
+            val otherMember = memberRepository.save(MemberFixture.createMemberWithDetails(OTHER_MEMBER_CODE, OTHER_ANONYMOUS_KEY_HASH))
+
+            //when, then
+            assertThatThrownBy { answerService.getAnswer(AuthSessionFixture.createActiveSessionOf(otherMember.id), answer.id) }
+                .isInstanceOf(RestApiException::class.java)
+                .hasFieldOrPropertyWithValue("exceptionCode", ANSWER_NOT_FOUND)
+        }
+
+        @Test
+        fun GUEST_세션이면_MEMBER_NOT_FOUND() {
+            //given
+            val answer = saveTodayAnswer()
+
+            //when, then
+            assertThatThrownBy { answerService.getAnswer(AuthSessionFixture.createGuestSession(), answer.id) }
+                .isInstanceOf(RestApiException::class.java)
+                .hasFieldOrPropertyWithValue("exceptionCode", MEMBER_NOT_FOUND)
+        }
+    }
+
+    @Nested
     inner class 답변을_수정할_때 {
 
         @Test
@@ -542,6 +771,13 @@ class AnswerServiceTest(
         )
     }
 
+    private fun saveAnswers(count: Int): List<Answer> {
+        val semaphore = saveSemaphore(TODAY_CODE, today)
+        return (count - 1 downTo 0).map {
+            answerRepository.save(AnswerFixture.createAnswer(member, semaphore, today.minusDays(it.toLong())))
+        }
+    }
+
     private fun createRequestOf(
         semaphore: Semaphore,
         question: Question,
@@ -594,5 +830,6 @@ class AnswerServiceTest(
         private const val COMBINING_MARK = "́"
         private const val MAX_GRAPHEME_COUNT = 2000
         private const val MAX_CODE_POINT_COUNT = 15000
+        private const val PAGE_SIZE = 20
     }
 }

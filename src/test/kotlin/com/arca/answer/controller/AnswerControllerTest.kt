@@ -18,6 +18,7 @@ import org.springframework.http.MediaType.APPLICATION_JSON
 import org.springframework.mock.web.MockHttpServletResponse
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.delete
+import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
 import org.springframework.test.web.servlet.put
 import tools.jackson.databind.JsonNode
@@ -159,6 +160,131 @@ class AnswerControllerTest(
 
             //when
             val response = postAnswer(guestToken, createBodyOf(semaphore.primaryQuestion, CONTENT))
+
+            //then
+            assertError(response, 403, "SESSION_SCOPE_INSUFFICIENT", "AUTH")
+        }
+    }
+
+    @Nested
+    inner class 기록_목록을_조회하면 {
+
+        @Test
+        fun 계약_필드를_정확히_200으로_응답한다() {
+            //given
+            val activeToken = signUp(ANONYMOUS_KEY)
+            val answerId = answerIdOf(postAnswer(activeToken, createBodyOf(semaphore.primaryQuestion, CONTENT)))
+
+            //when
+            val response = getAnswers(activeToken, null)
+
+            //then
+            val body = bodyOf(response)
+            val item = body.get("items").get(0)
+            assertThat(response.status).isEqualTo(200)
+            assertThat(body.propertyNames()).containsExactlyInAnyOrder("items", "nextCursor")
+            assertThat(body.get("items").size()).isEqualTo(1)
+            assertThat(body.get("nextCursor").isNull).isTrue()
+            assertThat(item.propertyNames()).containsExactlyInAnyOrder(*ANSWER_SUMMARY_FIELDS)
+            assertThat(item.get("question").propertyNames()).containsExactlyInAnyOrder(*QUESTION_FIELDS)
+            assertThat(item.get("answerId").asString()).isEqualTo(answerId)
+            assertThat(item.get("createdAt").asString()).endsWith("Z")
+        }
+
+        @Test
+        fun cursor를_보내면_그보다_앞선_답변만_돌려준다() {
+            //given
+            val activeToken = signUp(ANONYMOUS_KEY)
+            val answerId = answerIdOf(postAnswer(activeToken, createBodyOf(semaphore.primaryQuestion, CONTENT)))
+
+            //when
+            val response = getAnswers(activeToken, answerId)
+
+            //then
+            val body = bodyOf(response)
+            assertThat(response.status).isEqualTo(200)
+            assertThat(body.get("items").isEmpty).isTrue()
+            assertThat(body.get("nextCursor").isNull).isTrue()
+        }
+
+        @Test
+        fun 형식이_틀린_cursor면_400_CURSOR_INVALID() {
+            //given
+            val activeToken = signUp(ANONYMOUS_KEY)
+
+            //when
+            val response = getAnswers(activeToken, NON_NUMERIC_CURSOR)
+
+            //then
+            assertError(response, 400, "CURSOR_INVALID", "VALIDATION")
+        }
+
+        @Test
+        fun GUEST_세션은_SESSION_SCOPE_INSUFFICIENT() {
+            //given
+            val guestToken = exchangeSession(ANONYMOUS_KEY)
+
+            //when
+            val response = getAnswers(guestToken, null)
+
+            //then
+            assertError(response, 403, "SESSION_SCOPE_INSUFFICIENT", "AUTH")
+        }
+    }
+
+    @Nested
+    inner class 기록_상세를_조회하면 {
+
+        @Test
+        fun 계약_필드를_정확히_200으로_응답한다() {
+            //given
+            val activeToken = signUp(ANONYMOUS_KEY)
+            val answerId = answerIdOf(postAnswer(activeToken, createBodyOf(semaphore.primaryQuestion, CONTENT)))
+
+            //when
+            val response = getAnswer(activeToken, answerId)
+
+            //then
+            val body = bodyOf(response)
+            assertThat(response.status).isEqualTo(200)
+            assertThat(body.propertyNames()).containsExactlyInAnyOrder(*ANSWER_DETAIL_FIELDS)
+            assertThat(body.get("question").propertyNames()).containsExactlyInAnyOrder(*QUESTION_FIELDS)
+            assertThat(body.get("answerId").asString()).isEqualTo(answerId)
+            assertThat(body.get("content").asString()).isEqualTo(CONTENT)
+        }
+
+        @Test
+        fun 다른_회원의_답변이면_404_ANSWER_NOT_FOUND() {
+            //given
+            val answerId = answerIdOf(postAnswer(signUp(ANONYMOUS_KEY), createBodyOf(semaphore.primaryQuestion, CONTENT)))
+            val otherActiveToken = signUp(OTHER_ANONYMOUS_KEY)
+
+            //when
+            val response = getAnswer(otherActiveToken, answerId)
+
+            //then
+            assertError(response, 404, "ANSWER_NOT_FOUND", "VALIDATION")
+        }
+
+        @Test
+        fun 숫자가_아닌_answerId면_INVALID_REQUEST() {
+            //given
+            val activeToken = signUp(ANONYMOUS_KEY)
+
+            //when
+            val response = getAnswer(activeToken, NON_NUMERIC_ANSWER_ID)
+
+            //then
+            assertError(response, 400, "INVALID_REQUEST", "VALIDATION")
+        }
+
+        @Test
+        fun GUEST_세션은_SESSION_SCOPE_INSUFFICIENT() {
+            //given
+            val guestToken = exchangeSession(ANONYMOUS_KEY)
+
+            //when
+            val response = getAnswer(guestToken, UNKNOWN_ANSWER_ID)
 
             //then
             assertError(response, 403, "SESSION_SCOPE_INSUFFICIENT", "AUTH")
@@ -347,6 +473,25 @@ class AnswerControllerTest(
         }.andReturn().response
     }
 
+    private fun getAnswers(
+        accessToken: String,
+        cursor: String?
+    ): MockHttpServletResponse {
+        return mockMvc.get(ANSWERS_PATH) {
+            header(AUTHORIZATION, "$BEARER $accessToken")
+            cursor?.let { param("cursor", it) }
+        }.andReturn().response
+    }
+
+    private fun getAnswer(
+        accessToken: String,
+        answerId: String
+    ): MockHttpServletResponse {
+        return mockMvc.get("$ANSWERS_PATH/$answerId") {
+            header(AUTHORIZATION, "$BEARER $accessToken")
+        }.andReturn().response
+    }
+
     private fun putAnswer(
         accessToken: String,
         answerId: String,
@@ -403,12 +548,16 @@ class AnswerControllerTest(
         private const val CONTENT = "  오늘의 기록"
         private const val UPDATED_CONTENT = "고쳐 쓴 기록"
         private const val NON_NUMERIC_ANSWER_ID = "abc"
+        private const val NON_NUMERIC_CURSOR = "abc"
         private const val UNKNOWN_ANSWER_ID = "999999"
         private const val VALID_CONSENTS_BODY = "{\"consents\": [" +
             "{\"policyId\": \"terms-of-service\", \"version\": \"1\", \"agreed\": true}, " +
             "{\"policyId\": \"privacy-policy\", \"version\": \"1\", \"agreed\": true}" +
             "]}"
         private val QUESTION_FIELDS = arrayOf("questionId", "text")
+        private val ANSWER_SUMMARY_FIELDS = arrayOf(
+            "answerId", "dailySemaId", "semaId", "semaCode", "createdAt", "updatedAt", "createdDateKst", "isEdited", "question"
+        )
         private val ANSWER_DETAIL_FIELDS = arrayOf(
             "answerId", "dailySemaId", "semaId", "semaCode", "createdAt", "updatedAt", "createdDateKst", "isEdited", "question", "content"
         )

@@ -2,6 +2,8 @@ package com.arca.answer.controller
 
 import com.arca.answer.dto.request.CreateAnswerRequest
 import com.arca.answer.dto.request.UpdateAnswerRequest
+import com.arca.answer.dto.response.AnswerDetailResponse
+import com.arca.answer.dto.response.AnswerPageResponse
 import com.arca.answer.dto.response.CreateAnswerResponse
 import com.arca.answer.dto.response.DeleteAnswerResponse
 import com.arca.answer.dto.response.UpdateAnswerResponse
@@ -20,6 +22,7 @@ import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestParam
 
 @Tag(name = "Answer API", description = "답변 관련 API")
 interface AnswerControllerDocs {
@@ -129,6 +132,114 @@ interface AnswerControllerDocs {
         @Auth authSession: AuthSession,
         @Valid @RequestBody request: CreateAnswerRequest
     ): ResponseEntity<CreateAnswerResponse>
+
+    @Operation(
+        summary = "기록 목록 조회",
+        description = "내 답변을 answerId 내림차순으로 최대 20개씩 반환합니다. 항목에 답변 본문은 없고, 본문은 기록 상세 조회로 받습니다.<br>" +
+            "첫 요청은 cursor를 생략하고, 이후에는 직전 응답의 nextCursor를 그대로 보냅니다. 다음 페이지가 없으면 nextCursor는 null입니다.<br>" +
+            "이어 보는 중에 새로 쓴 답변은 이 목록에 끼지 않고 새로고침하면 보입니다. 수정한 답변은 최신 내용으로, 지운 답변은 빠진 채로 나옵니다.<br>" +
+            "🔐 <strong>세션 필요 (ACTIVE)</strong><br>"
+    )
+    @ApiResponses(
+        ApiResponse(responseCode = "200", description = "✅ 기록 목록 조회 성공"),
+        ApiResponse(
+            responseCode = "400",
+            description = "🚨 cursor 형식 오류 (숫자가 아님, 1 미만, 빈 문자열). 첫 페이지부터 다시 조회",
+            content = [
+                Content(
+                    mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    examples = [
+                        ExampleObject(
+                            name = "cursor 형식 오류",
+                            value = "{\"error\" : {\"code\" : \"CURSOR_INVALID\", \"category\" : \"VALIDATION\", \"requestId\" : \"req-example\"}}"
+                        )
+                    ],
+                    schema = Schema(implementation = ErrorResponse::class)
+                )
+            ]
+        ),
+        ApiResponse(
+            responseCode = "403",
+            description = "🚨 ACTIVE가 아닌 세션",
+            content = [
+                Content(
+                    mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    examples = [
+                        ExampleObject(
+                            name = "세션 mode 부족",
+                            value = "{\"error\" : {\"code\" : \"SESSION_SCOPE_INSUFFICIENT\", \"category\" : \"AUTH\", \"requestId\" : \"req-example\"}}"
+                        )
+                    ],
+                    schema = Schema(implementation = ErrorResponse::class)
+                )
+            ]
+        )
+    )
+    fun getAnswers(
+        @Auth authSession: AuthSession,
+        @RequestParam(required = false) cursor: String?
+    ): ResponseEntity<AnswerPageResponse>
+
+    @Operation(
+        summary = "기록 상세 조회",
+        description = "내 답변 하나를 답변한 질문, 답변 원문 전체와 함께 반환합니다. 원문은 저장한 그대로입니다.<br>" +
+            "🔐 <strong>세션 필요 (ACTIVE)</strong><br>"
+    )
+    @ApiResponses(
+        ApiResponse(responseCode = "200", description = "✅ 기록 상세 조회 성공"),
+        ApiResponse(
+            responseCode = "400",
+            description = "🚨 요청 형식 오류 (숫자가 아닌 answerId)",
+            content = [
+                Content(
+                    mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    examples = [
+                        ExampleObject(
+                            name = "요청 형식 오류",
+                            value = "{\"error\" : {\"code\" : \"INVALID_REQUEST\", \"category\" : \"VALIDATION\", \"requestId\" : \"req-example\"}}"
+                        )
+                    ],
+                    schema = Schema(implementation = ErrorResponse::class)
+                )
+            ]
+        ),
+        ApiResponse(
+            responseCode = "403",
+            description = "🚨 ACTIVE가 아닌 세션",
+            content = [
+                Content(
+                    mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    examples = [
+                        ExampleObject(
+                            name = "세션 mode 부족",
+                            value = "{\"error\" : {\"code\" : \"SESSION_SCOPE_INSUFFICIENT\", \"category\" : \"AUTH\", \"requestId\" : \"req-example\"}}"
+                        )
+                    ],
+                    schema = Schema(implementation = ErrorResponse::class)
+                )
+            ]
+        ),
+        ApiResponse(
+            responseCode = "404",
+            description = "🚨 답변 없음, 삭제, 비소유 (구분하지 않음)",
+            content = [
+                Content(
+                    mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    examples = [
+                        ExampleObject(
+                            name = "답변 없음",
+                            value = "{\"error\" : {\"code\" : \"ANSWER_NOT_FOUND\", \"category\" : \"VALIDATION\", \"requestId\" : \"req-example\"}}"
+                        )
+                    ],
+                    schema = Schema(implementation = ErrorResponse::class)
+                )
+            ]
+        )
+    )
+    fun getAnswer(
+        @Auth authSession: AuthSession,
+        @PathVariable answerId: Long
+    ): ResponseEntity<AnswerDetailResponse>
 
     @Operation(
         summary = "답변 수정",
