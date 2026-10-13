@@ -1,5 +1,6 @@
 package com.arca.member.service
 
+import com.arca.answer.repository.AnswerRepository
 import com.arca.auth.domain.AuthSession
 import com.arca.auth.domain.SessionMode.ACTIVE
 import com.arca.auth.dto.response.SessionContextResponse
@@ -18,7 +19,9 @@ import com.arca.member.infra.MemberCodeGenerator
 import com.arca.member.repository.MemberRepository
 import com.arca.terms.domain.Terms
 import com.arca.terms.domain.TermsAgreement
+import com.arca.terms.domain.TermsAgreementEvidence
 import com.arca.terms.infra.TermsAgreementValidator
+import com.arca.terms.repository.TermsAgreementEvidenceRepository
 import com.arca.terms.repository.TermsAgreementRepository
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
@@ -29,8 +32,10 @@ import java.time.Instant
 @Service
 class MemberService(
     private val memberRepository: MemberRepository,
+    private val answerRepository: AnswerRepository,
     private val authSessionRepository: AuthSessionRepository,
     private val termsAgreementRepository: TermsAgreementRepository,
+    private val termsAgreementEvidenceRepository: TermsAgreementEvidenceRepository,
     private val authSessionIssuer: AuthSessionIssuer,
     private val memberCodeGenerator: MemberCodeGenerator,
     private val termsAgreementValidator: TermsAgreementValidator,
@@ -99,6 +104,40 @@ class MemberService(
         member.updateNickname(request.nickname)
 
         return MemberProfileResponse.from(member)
+    }
+
+    @Transactional
+    fun deleteMember(authSession: AuthSession) {
+        val memberId = authSession.memberId
+            ?: throw RestApiException(MEMBER_NOT_FOUND)
+
+        val member = memberRepository.findByIdOrNull(memberId)
+            ?: throw RestApiException(MEMBER_NOT_FOUND)
+
+        val now = clock.instant()
+
+        answerRepository.deleteAllByMemberId(memberId)
+
+        val termsAgreements = termsAgreementRepository.findAllByMemberId(memberId)
+
+        termsAgreementEvidenceRepository.saveAll(
+            termsAgreements.map {
+                TermsAgreementEvidence.create(
+                    anonymousKeyHash = member.anonymousKeyHash,
+                    termsId = it.termsId,
+                    termsVersion = it.termsVersion,
+                    agreedAt = it.agreedAt,
+                    deletedAt = now
+                )
+            }
+        )
+
+        termsAgreementRepository.deleteAll(termsAgreements)
+
+        memberRepository.delete(member)
+
+        authSessionRepository.findAllValidByMemberId(memberId, now)
+            .forEach { it.revoke(now) }
     }
 
     private fun findMember(authSession: AuthSession): Member {

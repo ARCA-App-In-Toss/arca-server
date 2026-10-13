@@ -198,4 +198,51 @@ interface MemberControllerDocs {
         @Auth authSession: AuthSession,
         @Valid @RequestBody request: UpdateNicknameRequest
     ): ResponseEntity<MemberProfileResponse>
+
+    @Operation(
+        summary = "모든 데이터 삭제",
+        description = "답변, 회원 profile, 동의 연결을 한 트랜잭션으로 지우고 그 회원의 모든 토큰을 폐기합니다.<br>" +
+            "동의 증빙(정책 종류, 버전, 동의 시각, 삭제 시각, 가명 주체값)만 별도 저장소에 1년 보존합니다.<br>" +
+            "실패하면 아무것도 지우지 않습니다. 이후 같은 키로 세션을 재교환하면 GUEST입니다.<br>" +
+            "🔐 <strong>세션 필요 (ACTIVE)</strong><br>"
+    )
+    @ApiResponses(
+        ApiResponse(responseCode = "204", description = "✅ 모든 데이터 삭제 성공"),
+        ApiResponse(
+            responseCode = "401",
+            description = "🚨 이미 삭제되어 폐기된 토큰 (응답 유실 뒤 재전송 등)",
+            content = [
+                Content(
+                    mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    examples = [
+                        ExampleObject(
+                            name = "세션 재교환 필요",
+                            value = "{\"error\" : {\"code\" : \"SESSION_RECOVERY_REQUIRED\", \"category\" : \"AUTH\", \"requestId\" : \"req-example\", " +
+                                "\"recovery\" : {\"kind\" : \"REESTABLISH_SESSION\", \"recoveryAllowed\" : true}}}"
+                        )
+                    ],
+                    schema = Schema(implementation = ErrorResponse::class)
+                )
+            ]
+        ),
+        ApiResponse(
+            responseCode = "403",
+            description = "🚨 ACTIVE가 아닌 세션",
+            content = [
+                Content(
+                    mediaType = MediaType.APPLICATION_JSON_VALUE,
+                    examples = [
+                        ExampleObject(
+                            name = "세션 mode 부족",
+                            value = "{\"error\" : {\"code\" : \"SESSION_SCOPE_INSUFFICIENT\", \"category\" : \"AUTH\", \"requestId\" : \"req-example\"}}"
+                        )
+                    ],
+                    schema = Schema(implementation = ErrorResponse::class)
+                )
+            ]
+        )
+    )
+    fun deleteMember(
+        @Auth authSession: AuthSession
+    ): ResponseEntity<Void>
 }
