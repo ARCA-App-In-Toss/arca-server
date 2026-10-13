@@ -44,6 +44,8 @@ Controller → Service → Repository 순서를 따른다 (Facade 레이어 없�
   (`import com.arca.global.exception.domain.ExceptionCode.MEMBER_NOT_FOUND`)
   - 단 `ExceptionCode` 타입 자체를 참조할 때(파라미터 타입 등)는 타입을 import한다 (예: `GlobalExceptionHandler`)
 - 와일드카드 import(`*`)를 쓰지 마라
+- DB 접근 예외(`DataAccessException`과 하위 타입, UNIQUE 위반 포함)를 Service에서 잡아 다른 코드로 바꾸지 마라. `GlobalExceptionHandler`가 `500 DATABASE_ERROR`로 응답하고 error 로그를 남긴다
+  - 중복은 Service의 존재 검사(`existsBy...`)로 먼저 `409`를 낸다. 검사를 통과한 동시 중복 요청만 DB 제약에 걸려 `DATABASE_ERROR`가 되고, 클라이언트가 버튼 비활성화로 막는다
 - 비즈니스 검증에 `require()`/`check()`를 쓰지 마라. 이들이 던지는 `IllegalArgumentException`/`IllegalStateException`은 `GlobalExceptionHandler`에서 `500 INTERNAL_ERROR`로 떨어진다
   - 요청 값과 무관하게 코드를 잘못 짠 경우만 잡는 검사에는 `check()`를 쓴다 (`RestApiException`의 code와 recovery 짝 검사). 이 실패는 서버 버그이므로 500이 맞다
   - `recovery`가 필수인 code를 `recovery` 없이, 또는 다른 kind로 던지면 `RestApiException` 생성에서 실패한다. code별 kind는 `ExceptionCode.exceptionRecoveryKind`에 있다
@@ -118,18 +120,18 @@ class PostService(
 - 파라미터가 2개 이상인 함수, 생성자 선언은 파라미터마다 줄바꿈하라
 - trailing comma를 쓰지 마라. 선언, 호출, 컬렉션, enum 항목 모두 마지막 원소 뒤에 쉼표를 붙이지 않는다
   - Controller와 Docs의 함수는 파라미터가 1개여도 줄바꿈한다 (`controller.md`)
-- 의존성 주입 파라미터는 계층별로 묶고, 그룹 사이를 빈 줄로 나눠라
+- 의존성 주입 파라미터는 계층별로 모아 순서대로 쓰고, 그룹 사이에 빈 줄을 넣지 마라
   - 같은 계층(Repository끼리, Service끼리)은 한 그룹이다. 도메인이 달라도 나누지 않는다. 그룹 안에서는 자기 도메인을 먼저 쓴다
-  - 계층에 속하지 않는 컴포넌트(토큰 발급기, 인코더, 리졸버, 외부 API 클라이언트 등)는 따로 한 그룹으로 묶는다
+  - 계층에 속하지 않는 컴포넌트(토큰 발급기, 인코더, 리졸버, 외부 API 클라이언트 등)는 따로 한 그룹으로 모은다. `Clock`은 맨 끝에 둔다
   - 가장 가까운 아래 계층 그룹을 맨 위에 둔다. Service는 Repository 그룹, Controller는 Service 그룹이 먼저다
 
 ```kotlin
 @Service
 class AuthService(
     private val memberRepository: MemberRepository,
-
     private val tokenGenerator: TokenGenerator,
-    private val passwordEncoder: PasswordEncoder
+    private val passwordEncoder: PasswordEncoder,
+    private val clock: Clock
 )
 ```
 
@@ -164,7 +166,7 @@ return PostsResponse.of(...)
 - 패키지는 도메인 단위로 나눠라
 - 클래스는 PascalCase로 작성하라 (`MemberService`, `PostController`)
 - 함수는 camelCase + CRUD 동사를 사용하라 (`findByMemberId`, `createPost`, `deletePost`)
-- API 경로는 `/v1` 아래에 kebab-case로 작성하라. 리소스 이름과 단복수는 API 계약을 그대로 따른다 (`/v1/members`, `/v1/answers`, `/v1/questions/today`)
+- API 경로는 `/v1` 아래에 kebab-case로 작성하라. 리소스 이름과 단복수는 API 계약을 그대로 따른다 (`/v1/members`, `/v1/answers`, `/v1/semas/today`)
 - 연속된 대문자를 쓰지 마라 (`lastSemesterGPA` 대신 `lastSemesterGpa`, `userID` 대신 `userId`)
 
 ### 클래스 타입 변수는 타입명을 그대로 써라

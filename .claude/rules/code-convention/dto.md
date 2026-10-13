@@ -14,6 +14,14 @@ paths:
 - **같은 값은 모든 DTO에서 같은 이름을 써라.** 한쪽은 `status`, 다른 쪽은 `postStatus`처럼 갈리면
   클라이언트가 응답마다 다르게 파싱해야 한다
 
+## 이름
+
+- Request는 `{동작}{도메인}Request`다 (`CreateAnswerRequest`, `UpdateAnswerRequest`)
+- 그 요청에 대한 응답 Response는 Request와 짝을 맞춰 `{동작}{도메인}Response`로 짓는다 (`UpdateAnswerRequest` → `UpdateAnswerResponse`)
+  - 응답 구조가 같아도 동작마다 따로 둔다. 작성, 수정을 `SaveAnswerResponse` 하나로 묶지 마라
+  - Request가 없는 API(삭제 등)도 같은 규칙으로 짓는다 (`DeleteAnswerResponse`)
+- 여러 응답에 들어가는 공용 조각은 표현 대상 이름을 쓴다 (`AnswerDetailResponse`, `AnswerCountResponse`)
+
 ## 프로퍼티 사이 빈 줄
 
 - `request/`, `response/`는 프로퍼티 사이를 빈 줄로 구분하라. 프로퍼티마다 `@Schema`와 validation 어노테이션이 붙어서 붙여 쓰면 경계가 보이지 않는다
