@@ -1,6 +1,7 @@
 package com.arca.member.controller
 
 import com.arca.auth.domain.SessionMode.ACTIVE
+import com.arca.auth.domain.SessionMode.GUEST
 import com.arca.global.infra.IntegrationTest
 import com.arca.member.repository.MemberRepository
 import com.arca.terms.domain.TermsAgreement
@@ -16,6 +17,7 @@ import org.springframework.http.HttpHeaders.AUTHORIZATION
 import org.springframework.http.MediaType.APPLICATION_JSON
 import org.springframework.mock.web.MockHttpServletResponse
 import org.springframework.test.web.servlet.MockMvc
+import org.springframework.test.web.servlet.delete
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.post
 import org.springframework.test.web.servlet.put
@@ -430,6 +432,90 @@ class MemberControllerTest(
         }
     }
 
+    @Nested
+    inner class 모든_데이터를_삭제하면 {
+
+        @Test
+        fun body_없이_204로_응답한다() {
+            //given
+            val activeToken = signUp(ANONYMOUS_KEY)
+
+            //when
+            val response = deleteMyMember(activeToken)
+
+            //then
+            assertThat(response.status).isEqualTo(204)
+            assertThat(response.contentAsString).isEmpty()
+        }
+
+        @Test
+        fun 같은_토큰으로_다시_삭제하면_SESSION_RECOVERY_REQUIRED() {
+            //given
+            val activeToken = signUp(ANONYMOUS_KEY)
+            deleteMyMember(activeToken)
+
+            //when
+            val response = deleteMyMember(activeToken)
+
+            //then
+            assertError(response, 401, "SESSION_RECOVERY_REQUIRED", "AUTH")
+            assertThat(errorOf(response).get("recovery").get("kind").asString()).isEqualTo("REESTABLISH_SESSION")
+        }
+
+        @Test
+        fun 같은_토큰으로_회원_정보를_조회하면_SESSION_RECOVERY_REQUIRED() {
+            //given
+            val activeToken = signUp(ANONYMOUS_KEY)
+            deleteMyMember(activeToken)
+
+            //when
+            val response = getMyMember(activeToken)
+
+            //then
+            assertError(response, 401, "SESSION_RECOVERY_REQUIRED", "AUTH")
+        }
+
+        @Test
+        fun 같은_회원의_다른_토큰도_SESSION_RECOVERY_REQUIRED() {
+            //given
+            val activeToken = signUp(ANONYMOUS_KEY)
+            val otherActiveToken = exchangeSession(ANONYMOUS_KEY)
+            deleteMyMember(activeToken)
+
+            //when
+            val response = getMyMember(otherActiveToken)
+
+            //then
+            assertError(response, 401, "SESSION_RECOVERY_REQUIRED", "AUTH")
+        }
+
+        @Test
+        fun 같은_익명_키로_다시_교환하면_GUEST_세션을_받는다() {
+            //given
+            deleteMyMember(signUp(ANONYMOUS_KEY))
+
+            //when
+            val response = postSession(ANONYMOUS_KEY)
+
+            //then
+            val context = jsonMapper.readTree(response.contentAsString).get("context")
+            assertThat(context.get("mode").asString()).isEqualTo(GUEST.name)
+            assertThat(context.get("member").isNull).isTrue()
+        }
+
+        @Test
+        fun GUEST_세션은_SESSION_SCOPE_INSUFFICIENT() {
+            //given
+            val guestToken = exchangeSession(ANONYMOUS_KEY)
+
+            //when
+            val response = deleteMyMember(guestToken)
+
+            //then
+            assertError(response, 403, "SESSION_SCOPE_INSUFFICIENT", "AUTH")
+        }
+    }
+
     private fun postSession(anonymousKey: String): MockHttpServletResponse {
         return mockMvc.post(SESSIONS_PATH) {
             contentType = APPLICATION_JSON
@@ -458,6 +544,12 @@ class MemberControllerTest(
 
     private fun getMyMember(accessToken: String): MockHttpServletResponse {
         return mockMvc.get(MY_MEMBER_PATH) {
+            header(AUTHORIZATION, "$BEARER $accessToken")
+        }.andReturn().response
+    }
+
+    private fun deleteMyMember(accessToken: String): MockHttpServletResponse {
+        return mockMvc.delete(MY_MEMBER_PATH) {
             header(AUTHORIZATION, "$BEARER $accessToken")
         }.andReturn().response
     }
