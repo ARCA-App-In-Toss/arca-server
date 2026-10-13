@@ -18,7 +18,7 @@ src/main/kotlin/com/arca/
 ├── member/              # 회원 (가입, profile, 닉네임)
 ├── question/            # 질문 (SEMA를 이루는 질문 엔티티와 응답 조각)
 ├── semaphore/           # 세마포어 (계약 용어 SEMA. 기본, 대체 질문 묶음, KST 날짜 편성, 오늘의 SEMA 조회)
-└── answer/              # 답변 (작성, 수정, 삭제, 활성 답변 수)
+└── answer/              # 답변 (작성, 기록 목록, 기록 상세, 수정, 삭제, 활성 답변 수)
 ```
 
 도메인 패키지는 생길 때마다 위 트리에 `{domain}/  # 한 줄 설명` 형태로 추가한다.
