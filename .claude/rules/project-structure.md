@@ -14,8 +14,8 @@ src/main/kotlin/com/arca/
 ├── ArcaApplication.kt
 ├── global/              # 공통 설정(config), 예외(exception), 어노테이션, HTTP, 공용 infra
 ├── auth/                # 인증 (세션 교환, 토큰 검증, 세션 mode 검사)
-├── terms/               # 약관 (필수 약관 목록, 약관 동의 기록)
-├── member/              # 회원 (가입, profile, 닉네임)
+├── terms/               # 약관 (필수 약관 목록, 약관 동의 기록, 삭제 뒤 동의 증빙)
+├── member/              # 회원 (가입, profile, 닉네임, 모든 데이터 삭제)
 ├── question/            # 질문 (SEMA를 이루는 질문 엔티티와 응답 조각)
 ├── semaphore/           # 세마포어 (계약 용어 SEMA. 기본, 대체 질문 묶음, KST 날짜 편성, 오늘의 SEMA 조회)
 └── answer/              # 답변 (작성, 기록 목록, 기록 상세, 수정, 삭제, 활성 답변 수)
