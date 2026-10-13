@@ -22,7 +22,6 @@ import org.springframework.test.web.servlet.options
 @AutoConfigureMockMvc
 class CorsConfigTest(
     private val mockMvc: MockMvc,
-
     private val corsProperties: CorsProperties
 ) {
 

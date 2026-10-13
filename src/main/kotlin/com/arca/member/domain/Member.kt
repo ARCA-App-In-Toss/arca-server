@@ -34,21 +34,12 @@ class Member private constructor(
     var nickname: String? = null
         protected set
 
-    @Column(nullable = false, name = "revision")
-    var revision: Long = 0L
-        protected set
-
     @Column(nullable = false, name = "created_at")
     var createdAt: Instant = createdAt
         protected set
 
-    fun hasRevision(revision: String): Boolean {
-        return this.revision.toString() == revision
-    }
-
     fun updateNickname(nickname: String?) {
         this.nickname = nickname?.let { normalizeNickname(it) }
-        revision++
     }
 
     private fun normalizeNickname(nickname: String): String {

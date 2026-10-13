@@ -29,10 +29,6 @@ class Semaphore private constructor(
     var code: String = code
         protected set
 
-    @Column(nullable = false, name = "version")
-    var version: Long = INITIAL_CONTENT_VERSION
-        protected set
-
     @Column(name = "date_kst")
     var dateKst: LocalDate? = dateKst
         protected set
@@ -47,9 +43,15 @@ class Semaphore private constructor(
     var alternateQuestion: Question = alternateQuestion
         protected set
 
-    companion object {
-        private const val INITIAL_CONTENT_VERSION = 1L
+    fun hasId(semaphoreId: String): Boolean {
+        return id.toString() == semaphoreId
+    }
 
+    fun findQuestion(questionId: String): Question? {
+        return listOf(primaryQuestion, alternateQuestion).firstOrNull { it.hasId(questionId) }
+    }
+
+    companion object {
         fun create(
             code: String,
             dateKst: LocalDate?,

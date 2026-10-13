@@ -15,7 +15,6 @@ import java.time.LocalDate
 @IntegrationTest
 class SemaphoreRepositoryTest(
     private val semaphoreRepository: SemaphoreRepository,
-
     private val entityManager: EntityManager
 ) {
 

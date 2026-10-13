@@ -21,16 +21,14 @@ description: 테스트 코드 작성 규칙 (모든 테스트는 통합 테스�
 - 주 생성자의 `private val` 파라미터로 주입하라. `@TestConstructor`가 붙어 있어 `@Autowired`를 쓰지 않는다
 - `@Autowired lateinit var` 필드 주입을 쓰지 마라
 - 설정 값은 파라미터에 `@param:Value`를 붙여 받는다 (`@param:Value("\${cors.allowed-origin}") private val allowedOrigin: String`)
-- 파라미터는 테스트 대상 → 데이터 준비용 Repository → 그 밖의 컴포넌트(`EntityManager`, 설정 값) 순으로 묶고, 그룹 사이를 빈 줄로 나눠라
+- 파라미터는 테스트 대상 → 데이터 준비용 Repository → 그 밖의 컴포넌트(`EntityManager`, 설정 값) 순으로 쓰고, 그룹 사이에 빈 줄을 넣지 않는다 (`common.md`의 의존성 주입 규칙과 같다)
 
 ```kotlin
 @IntegrationTest
 class PostServiceTest(
     private val postService: PostService,
-
     private val postRepository: PostRepository,
     private val memberRepository: MemberRepository,
-
     private val entityManager: EntityManager
 )
 ```

@@ -26,11 +26,9 @@ import java.time.Clock
 class AuthSessionService(
     private val authSessionRepository: AuthSessionRepository,
     private val memberRepository: MemberRepository,
-
     private val authSessionIssuer: AuthSessionIssuer,
     private val sha256Hasher: Sha256Hasher,
     private val anonymousKeyVerifier: AnonymousKeyVerifier,
-
     private val clock: Clock
 ) {
     @Transactional

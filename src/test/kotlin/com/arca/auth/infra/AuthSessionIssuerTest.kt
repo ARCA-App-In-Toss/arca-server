@@ -13,9 +13,7 @@ import org.junit.jupiter.api.Test
 @IntegrationTest
 class AuthSessionIssuerTest(
     private val authSessionIssuer: AuthSessionIssuer,
-
     private val authSessionRepository: AuthSessionRepository,
-
     private val sha256Hasher: Sha256Hasher,
     private val authSessionProperties: AuthSessionProperties
 ) {

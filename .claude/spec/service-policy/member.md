@@ -18,7 +18,7 @@ description: 회원 정책 (가입, 회원 정보 조회, 닉네임)
 - 요청마다 아래 순서로 판정하고, 처음 걸린 조건의 오류로 응답한다
   1. `ACTIVE` 세션이면 `409 MEMBER_ALREADY_EXISTS`
   2. 세션의 익명 키에 이미 회원이 있으면 `409 MEMBER_ALREADY_EXISTS` (가입 전에 다른 기기에서 받아 둔 GUEST 토큰 등)
-  3. 동의 검증. 규칙은 `consent.md`를 따른다 (`422 POLICY_VERSION_CHANGED`, `422 CONSENT_REQUIRED`)
+  3. 동의 검증. 규칙은 `terms.md`를 따른다 (`422 POLICY_VERSION_CHANGED`, `422 CONSENT_REQUIRED`)
   4. 회원 생성과 동의 기록
 - 오류로 끝나면 회원, 동의 기록, 세션 모두 바뀌지 않는다
 - 회원 생성과 동의 기록은 한 트랜잭션이다. 닉네임은 가입에 포함하지 않는다 (가입 직후 닉네임은 `null`)
@@ -29,21 +29,18 @@ description: 회원 정책 (가입, 회원 정보 조회, 닉네임)
 - 실명, 전화번호, 이메일, 생년월일은 받지 않는다
 - 성공하면 가입에 쓴 GUEST 토큰을 폐기하고 새 `ACTIVE` 토큰을 발급한다. 성공 응답은 `201` 하나뿐이다
   - 응답이 유실돼 같은 요청을 다시 보내면 GUEST 토큰이 폐기돼 `401 SESSION_RECOVERY_REQUIRED`다. 클라이언트는 재전송하지 않고 세션을 재교환하며, `ACTIVE`면 가입된 것이다
-- 같은 익명 키의 가입이 동시에 와도 하나만 성공한다. 나머지는 `409 MEMBER_ALREADY_EXISTS`다
+- 같은 익명 키의 가입이 동시에 와도 UNIQUE 제약으로 하나만 저장된다. 경쟁에서 진 요청은 DB 예외로 `500 DATABASE_ERROR`다. 중복 제출은 프론트가 버튼 비활성화로 막는다
 
 ## 회원 정보 조회
 
 - 허용 세션 mode는 `ACTIVE`, `GUEST`다. `GUEST` 세션은 403이 아니라 항상 `404 MEMBER_NOT_FOUND`다
-- 회원 코드, 닉네임, revision을 돌려준다. 이 값이 현재 profile의 정본이다
+- 회원 코드, 닉네임을 돌려준다. 이 값이 현재 profile의 정본이다
 - 조회는 데이터를 만들지 않는다
 
 ## 닉네임
 
 - 허용 세션 mode는 `ACTIVE`다
-- 요청마다 아래 순서로 판정한다
-  1. `expectedRevision`이 현재 revision과 다르면 `409 REVISION_CONFLICT`
-  2. 닉네임 규칙을 어기면 `422 NICKNAME_INVALID`
-- 오류로 끝나면 닉네임과 revision 모두 바뀌지 않는다
+- 닉네임 규칙을 어기면 `422 NICKNAME_INVALID`이고 닉네임이 바뀌지 않는다
 - `nickname`이 `null`이면 닉네임을 해제한다. 필드를 생략하면 `400 INVALID_REQUEST`다
 - 닉네임 규칙 (문자열일 때)
   - 앞뒤 공백을 제거한 값을 저장하고 검사한다
@@ -53,5 +50,5 @@ description: 회원 정책 (가입, 회원 정보 조회, 닉네임)
   - 보이지 않는 한글 채움 문자(U+115F, U+1160, U+3164, U+FFA0)와 점자 공백(U+2800)을 거절한다
   - 공백 제거 후 UTF-16 길이가 255를 넘으면 거절한다 (결합 문자를 이어 붙인 비정상 입력 방지)
 - 성공 응답은 바뀐 뒤의 회원 profile이다
-- 성공할 때마다 revision이 1 오른다. 같은 닉네임으로 다시 설정해도 오른다
-- 같은 revision으로 동시에 온 변경은 따로 막지 않는다. 둘 다 성공하고 나중 것이 남는다. 실제 문제가 보이면 그때 보완한다
+- 같은 닉네임으로 다시 설정해도 성공한다
+- 회원 profile에는 revision(낙관적 잠금)이 없다. 다른 기기에서 동시에 온 변경은 따로 막지 않고 나중 것이 남는다

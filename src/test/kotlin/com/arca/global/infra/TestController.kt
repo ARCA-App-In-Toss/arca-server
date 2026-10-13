@@ -8,6 +8,7 @@ import com.arca.global.exception.domain.ExceptionRecovery
 import com.arca.global.exception.domain.RestApiException
 import jakarta.validation.Valid
 import jakarta.validation.constraints.NotBlank
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -86,6 +87,11 @@ class TestController {
         throw IllegalStateException(UNEXPECTED_MESSAGE)
     }
 
+    @GetMapping("/exceptions/database")
+    fun throwDatabase(): TestResponse {
+        throw DataIntegrityViolationException(DATABASE_MESSAGE)
+    }
+
     data class TestRequest(
         @field:NotBlank
         val name: String
@@ -100,5 +106,6 @@ class TestController {
         const val CREATED_AT = "2026-09-13T14:59:00Z"
         const val RETRY_AFTER_SECONDS = 30
         const val UNEXPECTED_MESSAGE = "노출되면 안 되는 내부 원인"
+        const val DATABASE_MESSAGE = "Duplicate entry for key uk_answer_member_id_created_date_kst"
     }
 }

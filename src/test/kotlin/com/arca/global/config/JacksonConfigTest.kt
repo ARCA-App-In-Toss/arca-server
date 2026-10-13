@@ -21,7 +21,6 @@ import java.time.Instant
 @AutoConfigureMockMvc
 class JacksonConfigTest(
     private val jsonMapper: JsonMapper,
-
     private val mockMvc: MockMvc
 ) {
 

@@ -1,10 +1,10 @@
 package com.arca.member.controller
 
 import com.arca.auth.domain.SessionMode.ACTIVE
-import com.arca.consent.domain.Consent
-import com.arca.consent.repository.ConsentRepository
 import com.arca.global.infra.IntegrationTest
 import com.arca.member.repository.MemberRepository
+import com.arca.terms.domain.TermsAgreement
+import com.arca.terms.repository.TermsAgreementRepository
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.tuple
 import org.junit.jupiter.api.Nested
@@ -27,8 +27,7 @@ import java.time.Instant
 @AutoConfigureMockMvc
 class MemberControllerTest(
     private val memberRepository: MemberRepository,
-    private val consentRepository: ConsentRepository,
-
+    private val termsAgreementRepository: TermsAgreementRepository,
     private val mockMvc: MockMvc,
     private val jsonMapper: JsonMapper
 ) {
@@ -52,7 +51,6 @@ class MemberControllerTest(
             assertThat(body.get("context").get("mode").asString()).isEqualTo(ACTIVE.name)
             assertThat(member.get("memberCode").asString()).matches(MEMBER_CODE_PATTERN)
             assertThat(member.get("nickname").isNull).isTrue()
-            assertThat(member.get("revision").asString()).isEqualTo(INITIAL_REVISION)
         }
 
         @Test
@@ -94,8 +92,8 @@ class MemberControllerTest(
 
             //then
             val after = Instant.now()
-            val consents = consentRepository.findAll()
-            assertThat(consents).extracting(Consent::policyId, Consent::policyVersion)
+            val consents = termsAgreementRepository.findAll()
+            assertThat(consents).extracting(TermsAgreement::termsId, TermsAgreement::termsVersion)
                 .containsExactlyInAnyOrder(
                     tuple(TERMS_OF_SERVICE_ID, CURRENT_VERSION),
                     tuple(PRIVACY_POLICY_ID, CURRENT_VERSION)
@@ -118,7 +116,7 @@ class MemberControllerTest(
 
             //then
             assertThat(response.status).isEqualTo(201)
-            assertThat(consentRepository.count()).isEqualTo(CONSENT_POLICY_COUNT)
+            assertThat(termsAgreementRepository.count()).isEqualTo(CONSENT_POLICY_COUNT)
         }
 
         @Test
@@ -303,7 +301,6 @@ class MemberControllerTest(
             assertThat(body.propertyNames()).containsExactlyInAnyOrder(*MEMBER_PROFILE_FIELDS)
             assertThat(body.get("memberCode").asString()).matches(MEMBER_CODE_PATTERN)
             assertThat(body.get("nickname").isNull).isTrue()
-            assertThat(body.get("revision").asString()).isEqualTo(INITIAL_REVISION)
         }
 
         @Test
@@ -323,44 +320,29 @@ class MemberControllerTest(
     inner class 닉네임을_바꾸면 {
 
         @Test
-        fun 설정하면_바뀐_profile을_200으로_받고_revision이_오른다() {
+        fun 설정하면_바뀐_profile을_200으로_받는다() {
             //given
             val activeToken = signUp(ANONYMOUS_KEY)
 
             //when
-            val response = putNickname(activeToken, nicknameBodyOf(NICKNAME, INITIAL_REVISION))
+            val response = putNickname(activeToken, nicknameBodyOf(NICKNAME))
 
             //then
             val body = jsonMapper.readTree(response.contentAsString)
             assertThat(response.status).isEqualTo(200)
             assertThat(body.propertyNames()).containsExactlyInAnyOrder(*MEMBER_PROFILE_FIELDS)
             assertThat(body.get("nickname").asString()).isEqualTo(NICKNAME)
-            assertThat(body.get("revision").asString()).isNotEqualTo(INITIAL_REVISION)
             assertThat(profileOf(activeToken).get("nickname").asString()).isEqualTo(NICKNAME)
-        }
-
-        @Test
-        fun 같은_닉네임으로_다시_설정해도_revision이_오른다() {
-            //given
-            val activeToken = signUp(ANONYMOUS_KEY)
-            val firstRevision = revisionOf(putNickname(activeToken, nicknameBodyOf(NICKNAME, INITIAL_REVISION)))
-
-            //when
-            val response = putNickname(activeToken, nicknameBodyOf(NICKNAME, firstRevision))
-
-            //then
-            assertThat(response.status).isEqualTo(200)
-            assertThat(revisionOf(response)).isNotEqualTo(firstRevision)
         }
 
         @Test
         fun null이면_닉네임을_해제한다() {
             //given
             val activeToken = signUp(ANONYMOUS_KEY)
-            val revision = revisionOf(putNickname(activeToken, nicknameBodyOf(NICKNAME, INITIAL_REVISION)))
+            putNickname(activeToken, nicknameBodyOf(NICKNAME))
 
             //when
-            val response = putNickname(activeToken, nicknameBodyOf(null, revision))
+            val response = putNickname(activeToken, nicknameBodyOf(null))
 
             //then
             assertThat(response.status).isEqualTo(200)
@@ -374,7 +356,7 @@ class MemberControllerTest(
             val activeToken = signUp(ANONYMOUS_KEY)
 
             //when
-            val response = putNickname(activeToken, nicknameBodyOf("  $NICKNAME  ", INITIAL_REVISION))
+            val response = putNickname(activeToken, nicknameBodyOf("  $NICKNAME  "))
 
             //then
             assertThat(jsonMapper.readTree(response.contentAsString).get("nickname").asString()).isEqualTo(NICKNAME)
@@ -387,7 +369,7 @@ class MemberControllerTest(
             val activeToken = signUp(ANONYMOUS_KEY)
 
             //when
-            val response = putNickname(activeToken, nicknameBodyOf(nickname, INITIAL_REVISION))
+            val response = putNickname(activeToken, nicknameBodyOf(nickname))
 
             //then
             assertThat(response.status).isEqualTo(200)
@@ -401,7 +383,7 @@ class MemberControllerTest(
             val activeToken = signUp(ANONYMOUS_KEY)
 
             //when
-            val response = putNickname(activeToken, nicknameBodyOf(nickname, INITIAL_REVISION))
+            val response = putNickname(activeToken, nicknameBodyOf(nickname))
 
             //then
             assertError(response, 422, "NICKNAME_INVALID", "VALIDATION")
@@ -415,36 +397,11 @@ class MemberControllerTest(
             val nickname = "가${COMBINING_MARK.repeat(COMBINING_MARK_COUNT)}나${COMBINING_MARK.repeat(COMBINING_MARK_COUNT)}"
 
             //when
-            val response = putNickname(activeToken, nicknameBodyOf(nickname, INITIAL_REVISION))
+            val response = putNickname(activeToken, nicknameBodyOf(nickname))
 
             //then
             assertError(response, 422, "NICKNAME_INVALID", "VALIDATION")
             assertProfileUnchanged(activeToken)
-        }
-
-        @Test
-        fun expectedRevision이_다르면_REVISION_CONFLICT이고_바뀌지_않는다() {
-            //given
-            val activeToken = signUp(ANONYMOUS_KEY)
-
-            //when
-            val response = putNickname(activeToken, nicknameBodyOf(NICKNAME, STALE_REVISION))
-
-            //then
-            assertError(response, 409, "REVISION_CONFLICT", "CONFLICT")
-            assertProfileUnchanged(activeToken)
-        }
-
-        @Test
-        fun revision과_닉네임이_둘_다_틀리면_REVISION_CONFLICT가_먼저다() {
-            //given
-            val activeToken = signUp(ANONYMOUS_KEY)
-
-            //when
-            val response = putNickname(activeToken, nicknameBodyOf(INVALID_NICKNAME, STALE_REVISION))
-
-            //then
-            assertError(response, 409, "REVISION_CONFLICT", "CONFLICT")
         }
 
         @Test
@@ -453,23 +410,11 @@ class MemberControllerTest(
             val activeToken = signUp(ANONYMOUS_KEY)
 
             //when
-            val response = putNickname(activeToken, "{\"expectedRevision\": \"$INITIAL_REVISION\"}")
+            val response = putNickname(activeToken, "{}")
 
             //then
             assertError(response, 400, "INVALID_REQUEST", "VALIDATION")
             assertProfileUnchanged(activeToken)
-        }
-
-        @Test
-        fun expectedRevision이_빈_문자열이면_INVALID_REQUEST() {
-            //given
-            val activeToken = signUp(ANONYMOUS_KEY)
-
-            //when
-            val response = putNickname(activeToken, nicknameBodyOf(NICKNAME, ""))
-
-            //then
-            assertError(response, 400, "INVALID_REQUEST", "VALIDATION")
         }
 
         @Test
@@ -478,7 +423,7 @@ class MemberControllerTest(
             val guestToken = exchangeSession(ANONYMOUS_KEY)
 
             //when
-            val response = putNickname(guestToken, nicknameBodyOf(NICKNAME, INITIAL_REVISION))
+            val response = putNickname(guestToken, nicknameBodyOf(NICKNAME))
 
             //then
             assertError(response, 403, "SESSION_SCOPE_INSUFFICIENT", "AUTH")
@@ -540,16 +485,8 @@ class MemberControllerTest(
         return "{\"consents\": [${consents.joinToString(CONSENT_SEPARATOR)}]}"
     }
 
-    private fun nicknameBodyOf(
-        nickname: String?,
-        expectedRevision: String
-    ): String {
-        return jsonMapper.writeValueAsString(
-            mapOf(
-                "nickname" to nickname,
-                "expectedRevision" to expectedRevision
-            )
-        )
+    private fun nicknameBodyOf(nickname: String?): String {
+        return jsonMapper.writeValueAsString(mapOf("nickname" to nickname))
     }
 
     private fun accessTokenOf(response: MockHttpServletResponse): String {
@@ -558,10 +495,6 @@ class MemberControllerTest(
 
     private fun memberCodeOf(response: MockHttpServletResponse): String {
         return jsonMapper.readTree(response.contentAsString).get("context").get("member").get("memberCode").asString()
-    }
-
-    private fun revisionOf(response: MockHttpServletResponse): String {
-        return jsonMapper.readTree(response.contentAsString).get("revision").asString()
     }
 
     private fun profileOf(accessToken: String): JsonNode {
@@ -585,14 +518,13 @@ class MemberControllerTest(
 
     private fun assertNothingCreated(guestToken: String) {
         assertThat(memberRepository.count()).isZero()
-        assertThat(consentRepository.count()).isZero()
+        assertThat(termsAgreementRepository.count()).isZero()
         assertError(getMyMember(guestToken), 404, "MEMBER_NOT_FOUND", "VALIDATION")
     }
 
     private fun assertProfileUnchanged(activeToken: String) {
         val profile = profileOf(activeToken)
         assertThat(profile.get("nickname").isNull).isTrue()
-        assertThat(profile.get("revision").asString()).isEqualTo(INITIAL_REVISION)
     }
 
     companion object {
@@ -609,15 +541,12 @@ class MemberControllerTest(
         private const val OUTDATED_VERSION = "0"
         private const val CONSENT_POLICY_COUNT = 2L
         private const val CONSENT_SEPARATOR = ", "
-        private const val INITIAL_REVISION = "0"
-        private const val STALE_REVISION = "999"
         private const val NICKNAME = "달빛"
-        private const val INVALID_NICKNAME = "달"
         private const val MEMBER_CODE_PATTERN = "^ARCA-[A-Z0-9]{5}$"
         private const val COMBINING_MARK = "́"
         private const val COMBINING_MARK_COUNT = 150
         private val SESSION_RESPONSE_FIELDS = arrayOf("accessToken", "expiresAt", "context")
-        private val MEMBER_PROFILE_FIELDS = arrayOf("memberCode", "nickname", "revision")
+        private val MEMBER_PROFILE_FIELDS = arrayOf("memberCode", "nickname")
         private const val VALID_CONSENTS_BODY = "{\"consents\": [" +
             "{\"policyId\": \"$TERMS_OF_SERVICE_ID\", \"version\": \"$CURRENT_VERSION\", \"agreed\": true}, " +
             "{\"policyId\": \"$PRIVACY_POLICY_ID\", \"version\": \"$CURRENT_VERSION\", \"agreed\": true}" +

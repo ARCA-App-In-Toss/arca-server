@@ -15,20 +15,13 @@ data class MemberProfileResponse(
         example = "달빛",
         nullable = true
     )
-    val nickname: String?,
-
-    @field:Schema(
-        description = "profile revision",
-        example = "1"
-    )
-    val revision: String
+    val nickname: String?
 ) {
     companion object {
         fun from(member: Member): MemberProfileResponse {
             return MemberProfileResponse(
                 memberCode = member.memberCode,
-                nickname = member.nickname,
-                revision = member.revision.toString()
+                nickname = member.nickname
             )
         }
     }

@@ -23,9 +23,7 @@ import tools.jackson.databind.json.JsonMapper
 @AutoConfigureMockMvc
 class AuthInterceptorTest(
     private val authSessionService: AuthSessionService,
-
     private val authSessionRepository: AuthSessionRepository,
-
     private val mockMvc: MockMvc,
     private val authSessionIssuer: AuthSessionIssuer,
     private val sha256Hasher: Sha256Hasher,

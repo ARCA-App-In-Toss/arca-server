@@ -1,9 +1,9 @@
 package com.arca.global.exception.domain
 
-import com.arca.consent.dto.response.ConsentPolicyResponse
 import com.arca.global.exception.domain.ExceptionRecoveryKind.REESTABLISH_SESSION
 import com.arca.global.exception.domain.ExceptionRecoveryKind.REFRESH_POLICIES
 import com.arca.global.exception.domain.ExceptionRecoveryKind.REFRESH_TODAY
+import com.arca.terms.dto.response.TermsResponse
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL
 
@@ -14,7 +14,7 @@ class ExceptionRecovery private constructor(
     val recoveryAllowed: Boolean?,
 
     @field:JsonInclude(NON_NULL)
-    val policies: List<ConsentPolicyResponse>?
+    val policies: List<TermsResponse>?
 ) {
     companion object {
         fun reestablishSession(): ExceptionRecovery {
@@ -25,7 +25,7 @@ class ExceptionRecovery private constructor(
             )
         }
 
-        fun refreshPolicies(policies: List<ConsentPolicyResponse>): ExceptionRecovery {
+        fun refreshPolicies(policies: List<TermsResponse>): ExceptionRecovery {
             return ExceptionRecovery(
                 kind = REFRESH_POLICIES,
                 recoveryAllowed = null,

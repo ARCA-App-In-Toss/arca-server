@@ -17,7 +17,6 @@ import com.arca.global.infra.IntegrationTest
 @IntegrationTest
 class {Target}Test(
     private val target: {TargetClass},
-
     private val repository: {Repository}
 ) {
     @Nested

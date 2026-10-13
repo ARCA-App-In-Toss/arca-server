@@ -11,7 +11,6 @@ import java.time.ZoneOffset.UTC
 @IntegrationTest
 class KstDateProviderTest(
     private val kstDateProvider: KstDateProvider,
-
     private val clock: Clock
 ) {
 

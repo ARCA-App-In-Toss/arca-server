@@ -139,7 +139,7 @@ interface MemberControllerDocs {
 
     @Operation(
         summary = "닉네임 설정, 해제",
-        description = "닉네임을 설정하거나 null로 해제합니다. expectedRevision이 현재 revision과 같을 때만 바꿉니다.<br>" +
+        description = "닉네임을 설정하거나 null로 해제합니다.<br>" +
             "앞뒤 공백을 제거한 뒤 확장 grapheme 기준 2~12자여야 하고, 줄바꿈, 제어, 보이지 않는 문자는 거절합니다.<br>" +
             "🔐 <strong>세션 필요 (ACTIVE)</strong><br>"
     )
@@ -171,22 +171,6 @@ interface MemberControllerDocs {
                         ExampleObject(
                             name = "세션 mode 부족",
                             value = "{\"error\" : {\"code\" : \"SESSION_SCOPE_INSUFFICIENT\", \"category\" : \"AUTH\", \"requestId\" : \"req-example\"}}"
-                        )
-                    ],
-                    schema = Schema(implementation = ErrorResponse::class)
-                )
-            ]
-        ),
-        ApiResponse(
-            responseCode = "409",
-            description = "🚨 revision 불일치",
-            content = [
-                Content(
-                    mediaType = MediaType.APPLICATION_JSON_VALUE,
-                    examples = [
-                        ExampleObject(
-                            name = "revision 불일치",
-                            value = "{\"error\" : {\"code\" : \"REVISION_CONFLICT\", \"category\" : \"CONFLICT\", \"requestId\" : \"req-example\"}}"
                         )
                     ],
                     schema = Schema(implementation = ErrorResponse::class)
