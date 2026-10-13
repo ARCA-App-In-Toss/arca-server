@@ -5,7 +5,6 @@ import com.arca.auth.domain.SessionMode.ACTIVE
 import com.arca.auth.domain.SessionMode.GUEST
 import com.arca.auth.infra.AuthSessionIssuer
 import com.arca.auth.service.AuthSessionService
-import com.arca.consent.dto.request.ConsentRequest
 import com.arca.global.exception.domain.ExceptionCode.MEMBER_ALREADY_EXISTS
 import com.arca.global.exception.domain.ExceptionCode.POLICY_VERSION_CHANGED
 import com.arca.global.exception.domain.ExceptionRecoveryKind.REFRESH_POLICIES
@@ -15,6 +14,7 @@ import com.arca.member.dto.request.CreateMemberRequest
 import com.arca.member.fixture.MemberFixture
 import com.arca.member.infra.FakeMemberCodeGenerator
 import com.arca.member.repository.MemberRepository
+import com.arca.terms.dto.request.TermsAgreementRequest
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.junit.jupiter.api.AfterEach
@@ -24,9 +24,7 @@ import org.junit.jupiter.api.Test
 @IntegrationTest
 class MemberServiceTest(
     private val memberService: MemberService,
-
     private val memberRepository: MemberRepository,
-
     private val authSessionIssuer: AuthSessionIssuer,
     private val authSessionService: AuthSessionService,
     private val fakeMemberCodeGenerator: FakeMemberCodeGenerator
@@ -137,12 +135,12 @@ class MemberServiceTest(
     private fun validRequest(): CreateMemberRequest {
         return CreateMemberRequest(
             consents = listOf(
-                ConsentRequest(
+                TermsAgreementRequest(
                     policyId = TERMS_OF_SERVICE_ID,
                     version = CURRENT_VERSION,
                     agreed = true
                 ),
-                ConsentRequest(
+                TermsAgreementRequest(
                     policyId = PRIVACY_POLICY_ID,
                     version = CURRENT_VERSION,
                     agreed = true
@@ -154,7 +152,7 @@ class MemberServiceTest(
     private fun outdatedRequest(): CreateMemberRequest {
         return CreateMemberRequest(
             consents = listOf(
-                ConsentRequest(
+                TermsAgreementRequest(
                     policyId = TERMS_OF_SERVICE_ID,
                     version = OUTDATED_VERSION,
                     agreed = true

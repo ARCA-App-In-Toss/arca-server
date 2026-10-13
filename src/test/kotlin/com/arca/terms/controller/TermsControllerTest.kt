@@ -1,4 +1,4 @@
-package com.arca.consent.controller
+package com.arca.terms.controller
 
 import com.arca.auth.domain.SessionMode
 import com.arca.auth.domain.SessionMode.ACTIVE
@@ -18,7 +18,7 @@ import tools.jackson.databind.json.JsonMapper
 
 @IntegrationTest
 @AutoConfigureMockMvc
-class ConsentControllerTest(
+class TermsControllerTest(
     private val mockMvc: MockMvc,
     private val authSessionIssuer: AuthSessionIssuer,
     private val jsonMapper: JsonMapper
@@ -33,7 +33,7 @@ class ConsentControllerTest(
             val accessToken = issueToken(GUEST, null)
 
             //when
-            val response = getConsentPolicies(accessToken)
+            val response = getTerms(accessToken)
 
             //then
             assertThat(response.status).isEqualTo(200)
@@ -47,7 +47,7 @@ class ConsentControllerTest(
             val accessToken = issueToken(GUEST, null)
 
             //when
-            val response = getConsentPolicies(accessToken)
+            val response = getTerms(accessToken)
 
             //then
             val body = jsonMapper.readTree(response.contentAsString)
@@ -67,7 +67,7 @@ class ConsentControllerTest(
             val accessToken = issueToken(ACTIVE, MEMBER_ID)
 
             //when
-            val response = getConsentPolicies(accessToken)
+            val response = getTerms(accessToken)
 
             //then
             assertThat(response.status).isEqualTo(200)
@@ -97,7 +97,7 @@ class ConsentControllerTest(
         ).accessToken
     }
 
-    private fun getConsentPolicies(accessToken: String): MockHttpServletResponse {
+    private fun getTerms(accessToken: String): MockHttpServletResponse {
         return mockMvc.get(CONSENT_POLICIES_PATH) {
             header(AUTHORIZATION, "$BEARER $accessToken")
         }.andReturn().response

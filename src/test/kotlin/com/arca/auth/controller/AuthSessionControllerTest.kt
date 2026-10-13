@@ -26,10 +26,8 @@ import java.time.Instant
 @AutoConfigureMockMvc
 class AuthSessionControllerTest(
     private val authSessionService: AuthSessionService,
-
     private val authSessionRepository: AuthSessionRepository,
     private val memberRepository: MemberRepository,
-
     private val mockMvc: MockMvc,
     private val sha256Hasher: Sha256Hasher,
     private val jsonMapper: JsonMapper
@@ -122,7 +120,6 @@ class AuthSessionControllerTest(
             assertThat(context.get("mode").asString()).isEqualTo(ACTIVE.name)
             assertThat(context.get("member").get("memberCode").asString()).isEqualTo(member.memberCode)
             assertThat(context.get("member").get("nickname").isNull).isTrue()
-            assertThat(context.get("member").get("revision").asString()).isEqualTo(member.revision.toString())
             assertThat(context.get("member").propertyNames()).containsExactlyInAnyOrder(*MEMBER_PROFILE_FIELDS)
         }
 
@@ -273,6 +270,6 @@ class AuthSessionControllerTest(
         private val TTL = Duration.ofHours(24)
         private val RESPONSE_FIELDS = arrayOf("accessToken", "expiresAt", "context")
         private val CONTEXT_FIELDS = arrayOf("mode", "member")
-        private val MEMBER_PROFILE_FIELDS = arrayOf("memberCode", "nickname", "revision")
+        private val MEMBER_PROFILE_FIELDS = arrayOf("memberCode", "nickname")
     }
 }

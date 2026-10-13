@@ -1,6 +1,7 @@
 package com.arca.global.exception.handler
 
 import com.arca.global.infra.IntegrationTest
+import com.arca.global.infra.TestController.Companion.DATABASE_MESSAGE
 import com.arca.global.infra.TestController.Companion.RETRY_AFTER_SECONDS
 import com.arca.global.infra.TestController.Companion.UNEXPECTED_MESSAGE
 import org.assertj.core.api.Assertions.assertThat
@@ -23,7 +24,6 @@ import tools.jackson.databind.json.JsonMapper
 @AutoConfigureMockMvc
 class GlobalExceptionHandlerTest(
     private val mockMvc: MockMvc,
-
     private val jsonMapper: JsonMapper
 ) {
 
@@ -238,6 +238,32 @@ class GlobalExceptionHandlerTest(
 
             //then
             assertValidationError(response, 406, "MEDIA_TYPE_NOT_ACCEPTABLE")
+        }
+    }
+
+    @Nested
+    inner class DB_접근_예외가_나면 {
+
+        @Test
+        fun DATABASE_ERROR로_응답한다() {
+            //when
+            val response = mockMvc.get("$PATH/exceptions/database").andReturn().response
+
+            //then
+            val error = errorOf(response)
+            assertThat(response.status).isEqualTo(500)
+            assertThat(error.get("code").asString()).isEqualTo("DATABASE_ERROR")
+            assertThat(error.get("category").asString()).isEqualTo("MAINTENANCE")
+        }
+
+        @Test
+        fun 원인을_응답에_노출하지_않는다() {
+            //when
+            val response = mockMvc.get("$PATH/exceptions/database").andReturn().response
+
+            //then
+            assertThat(errorOf(response).propertyNames()).containsExactly("code", "category", "requestId")
+            assertThat(response.contentAsString).doesNotContain(DATABASE_MESSAGE)
         }
     }
 

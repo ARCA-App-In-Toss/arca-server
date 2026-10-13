@@ -19,9 +19,7 @@ import java.time.Instant
 @IntegrationTest
 class AuthSessionServiceTest(
     private val authSessionService: AuthSessionService,
-
     private val authSessionRepository: AuthSessionRepository,
-
     private val authSessionIssuer: AuthSessionIssuer,
     private val sha256Hasher: Sha256Hasher
 ) {
