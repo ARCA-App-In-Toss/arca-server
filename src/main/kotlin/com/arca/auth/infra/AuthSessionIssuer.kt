@@ -13,10 +13,8 @@ import java.util.Base64
 @Component
 class AuthSessionIssuer(
     private val authSessionRepository: AuthSessionRepository,
-
     private val sha256Hasher: Sha256Hasher,
     private val authSessionProperties: AuthSessionProperties,
-
     private val clock: Clock
 ) {
     fun issue(

@@ -3,7 +3,6 @@ package com.arca.member.dto.request
 import com.fasterxml.jackson.annotation.JsonProperty
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED
-import jakarta.validation.constraints.NotEmpty
 
 data class UpdateNicknameRequest(
     @param:JsonProperty(required = true)
@@ -13,12 +12,5 @@ data class UpdateNicknameRequest(
         nullable = true,
         requiredMode = REQUIRED
     )
-    val nickname: String?,
-
-    @field:Schema(
-        description = "현재 profile revision",
-        example = "1"
-    )
-    @field:NotEmpty
-    val expectedRevision: String
+    val nickname: String?
 )

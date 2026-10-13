@@ -1,6 +1,7 @@
 package com.arca.global.exception.handler
 
 import com.arca.global.exception.domain.ExceptionCode
+import com.arca.global.exception.domain.ExceptionCode.DATABASE_ERROR
 import com.arca.global.exception.domain.ExceptionCode.ENDPOINT_NOT_FOUND
 import com.arca.global.exception.domain.ExceptionCode.INTERNAL_ERROR
 import com.arca.global.exception.domain.ExceptionCode.INVALID_REQUEST
@@ -12,6 +13,7 @@ import com.arca.global.exception.domain.RestApiException
 import com.arca.global.exception.dto.response.ErrorResponse
 import com.arca.global.infra.RequestIdFilter.Companion.REQUEST_ID_ATTRIBUTE
 import org.apache.logging.log4j.LogManager
+import org.springframework.dao.DataAccessException
 import org.springframework.http.HttpHeaders.RETRY_AFTER
 import org.springframework.http.MediaType.APPLICATION_JSON
 import org.springframework.http.ResponseEntity
@@ -139,6 +141,19 @@ class GlobalExceptionHandler {
 
         return makeExceptionResponse(
             exceptionCode = MEDIA_TYPE_NOT_ACCEPTABLE,
+            requestId = requestId
+        )
+    }
+
+    @ExceptionHandler(DataAccessException::class)
+    fun handleDataAccessException(
+        e: DataAccessException,
+        @RequestAttribute(REQUEST_ID_ATTRIBUTE) requestId: String
+    ): ResponseEntity<ErrorResponse> {
+        log.error("Data access exception occurred. requestId = {}, type = {}", requestId, e.javaClass.simpleName, e)
+
+        return makeExceptionResponse(
+            exceptionCode = DATABASE_ERROR,
             requestId = requestId
         )
     }
