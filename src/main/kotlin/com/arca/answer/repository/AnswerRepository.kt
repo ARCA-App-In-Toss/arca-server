@@ -3,6 +3,7 @@ package com.arca.answer.repository
 import com.arca.answer.domain.Answer
 import org.springframework.data.domain.Limit
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import java.time.LocalDate
@@ -67,4 +68,13 @@ interface AnswerRepository : JpaRepository<Answer, Long> {
         @Param("answerId") answerId: Long,
         limit: Limit
     ): List<Answer>
+
+    @Modifying
+    @Query("""
+        DELETE FROM Answer a
+        WHERE a.member.id = :memberId
+    """)
+    fun deleteAllByMemberId(
+        @Param("memberId") memberId: Long
+    )
 }

@@ -12,8 +12,10 @@ import com.arca.member.dto.response.MemberProfileResponse
 import com.arca.member.service.MemberService
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus.CREATED
+import org.springframework.http.HttpStatus.NO_CONTENT
 import org.springframework.http.HttpStatus.OK
 import org.springframework.http.ResponseEntity
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
@@ -54,5 +56,14 @@ class MemberController(
     ): ResponseEntity<MemberProfileResponse> {
         val response = memberService.updateNickname(authSession, request)
         return ResponseEntity.status(OK).body(response)
+    }
+
+    @AllowedSessionModes([ACTIVE])
+    @DeleteMapping("/me")
+    override fun deleteMember(
+        @Auth authSession: AuthSession
+    ): ResponseEntity<Void> {
+        memberService.deleteMember(authSession)
+        return ResponseEntity.status(NO_CONTENT).build()
     }
 }
