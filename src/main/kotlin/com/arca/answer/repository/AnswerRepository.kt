@@ -1,6 +1,7 @@
 package com.arca.answer.repository
 
 import com.arca.answer.domain.Answer
+import org.springframework.data.domain.Limit
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
@@ -51,4 +52,19 @@ interface AnswerRepository : JpaRepository<Answer, Long> {
     fun countByMemberId(
         @Param("memberId") memberId: Long
     ): Long
+
+    @Query("""
+        SELECT a
+        FROM Answer a
+        JOIN FETCH a.semaphore
+        JOIN FETCH a.question
+        WHERE a.member.id = :memberId
+          AND a.id < :answerId
+        ORDER BY a.id DESC
+    """)
+    fun findPageByMemberIdAndIdLessThan(
+        @Param("memberId") memberId: Long,
+        @Param("answerId") answerId: Long,
+        limit: Limit
+    ): List<Answer>
 }
