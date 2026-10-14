@@ -1,5 +1,9 @@
 package com.arca.answer.service
 
+import com.arca.analytics.domain.ProductEventName.ANSWER_DELETED
+import com.arca.analytics.domain.ProductEventName.ANSWER_EDITED
+import com.arca.analytics.domain.ProductEventName.ANSWER_SAVED
+import com.arca.analytics.repository.ProductEventRepository
 import com.arca.answer.domain.Answer
 import com.arca.answer.dto.request.CreateAnswerRequest
 import com.arca.answer.dto.request.UpdateAnswerRequest
@@ -41,6 +45,7 @@ import java.time.LocalDate
 class AnswerServiceTest(
     private val answerService: AnswerService,
     private val answerRepository: AnswerRepository,
+    private val productEventRepository: ProductEventRepository,
     private val memberRepository: MemberRepository,
     private val semaphoreRepository: SemaphoreRepository,
     private val kstDateProvider: KstDateProvider,
@@ -207,6 +212,38 @@ class AnswerServiceTest(
                 .hasFieldOrPropertyWithValue("exceptionCode", SEMA_REPLACED)
                 .extracting { (it as RestApiException).exceptionRecovery?.kind }
                 .isEqualTo(REFRESH_TODAY)
+        }
+
+        @Test
+        fun 작성에_성공하면_세션의_익명_키_주체로_answer_saved를_기록한다() {
+            //given
+            val semaphore = saveSemaphore(TODAY_CODE, today)
+            val activeSession = activeSession()
+
+            //when
+            val response = answerService.createAnswer(activeSession, createRequestOf(semaphore, semaphore.primaryQuestion, CONTENT))
+
+            //then
+            val productEvent = productEventRepository.findAll().single()
+            assertThat(productEvent.productEventName).isEqualTo(ANSWER_SAVED)
+            assertThat(productEvent.anonymousKeyHash).isEqualTo(activeSession.anonymousKeyHash)
+            assertThat(productEvent.occurredAt).isEqualTo(response.answer.createdAt)
+            assertThat(productEvent.properties).isEmpty()
+        }
+
+        @Test
+        fun 작성이_거절되면_answer_saved를_기록하지_않는다() {
+            //given
+            val semaphore = saveSemaphore(TODAY_CODE, today)
+            answerRepository.save(AnswerFixture.createAnswer(member, semaphore, today))
+
+            //when, then
+            assertThatThrownBy {
+                answerService.createAnswer(activeSession(), createRequestOf(semaphore, semaphore.primaryQuestion, CONTENT))
+            }
+                .isInstanceOf(RestApiException::class.java)
+                .hasFieldOrPropertyWithValue("exceptionCode", ANSWER_ALREADY_EXISTS)
+            assertThat(productEventRepository.count()).isZero()
         }
 
         @Test
@@ -642,6 +679,43 @@ class AnswerServiceTest(
         }
 
         @Test
+        fun 수정에_성공하면_수정_시각으로_answer_edited를_기록한다() {
+            //given
+            val answer = saveTodayAnswer()
+
+            //when
+            val response = answerService.updateAnswer(activeSession(), answer.id, UpdateAnswerRequest(UPDATED_CONTENT))
+
+            //then
+            val productEvent = productEventRepository.findAll().single()
+            assertThat(productEvent.productEventName).isEqualTo(ANSWER_EDITED)
+            assertThat(productEvent.anonymousKeyHash).isEqualTo(activeSession().anonymousKeyHash)
+            assertThat(productEvent.occurredAt).isEqualTo(response.answer.updatedAt)
+        }
+
+        @Test
+        fun 같은_본문으로_수정해도_answer_edited를_기록한다() {
+            //given
+            val answer = saveTodayAnswer()
+
+            //when
+            answerService.updateAnswer(activeSession(), answer.id, UpdateAnswerRequest(answer.content))
+
+            //then
+            assertThat(productEventRepository.findAll()).extracting<Any> { it.productEventName }
+                .containsExactly(ANSWER_EDITED)
+        }
+
+        @Test
+        fun 수정이_거절되면_answer_edited를_기록하지_않는다() {
+            //when, then
+            assertThatThrownBy { answerService.updateAnswer(activeSession(), UNKNOWN_ANSWER_ID, UpdateAnswerRequest(UPDATED_CONTENT)) }
+                .isInstanceOf(RestApiException::class.java)
+                .hasFieldOrPropertyWithValue("exceptionCode", ANSWER_NOT_FOUND)
+            assertThat(productEventRepository.count()).isZero()
+        }
+
+        @Test
         fun 지난_날짜_답변도_수정할_수_있다() {
             //given
             val pastSemaphore = saveSemaphore(YESTERDAY_CODE, today.minusDays(1))
@@ -721,6 +795,29 @@ class AnswerServiceTest(
             //then
             assertThat(response.activeAnswerCount.count).isEqualTo(1L)
             assertThat(answerRepository.findById(answer.id)).isEmpty()
+        }
+
+        @Test
+        fun 삭제에_성공하면_answer_deleted를_기록한다() {
+            //given
+            val answer = saveTodayAnswer()
+
+            //when
+            answerService.deleteAnswer(activeSession(), answer.id)
+
+            //then
+            val productEvent = productEventRepository.findAll().single()
+            assertThat(productEvent.productEventName).isEqualTo(ANSWER_DELETED)
+            assertThat(productEvent.anonymousKeyHash).isEqualTo(activeSession().anonymousKeyHash)
+        }
+
+        @Test
+        fun 삭제가_거절되면_answer_deleted를_기록하지_않는다() {
+            //when, then
+            assertThatThrownBy { answerService.deleteAnswer(activeSession(), UNKNOWN_ANSWER_ID) }
+                .isInstanceOf(RestApiException::class.java)
+                .hasFieldOrPropertyWithValue("exceptionCode", ANSWER_NOT_FOUND)
+            assertThat(productEventRepository.count()).isZero()
         }
 
         @Test
