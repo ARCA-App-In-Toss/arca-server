@@ -1,5 +1,10 @@
 package com.arca.answer.service
 
+import com.arca.analytics.domain.ProductEvent
+import com.arca.analytics.domain.ProductEventName.ANSWER_DELETED
+import com.arca.analytics.domain.ProductEventName.ANSWER_EDITED
+import com.arca.analytics.domain.ProductEventName.ANSWER_SAVED
+import com.arca.analytics.repository.ProductEventRepository
 import com.arca.answer.domain.Answer
 import com.arca.answer.dto.request.CreateAnswerRequest
 import com.arca.answer.dto.request.UpdateAnswerRequest
@@ -33,6 +38,7 @@ import java.time.Clock
 @Service
 class AnswerService(
     private val answerRepository: AnswerRepository,
+    private val productEventRepository: ProductEventRepository,
     private val memberRepository: MemberRepository,
     private val semaphoreRepository: SemaphoreRepository,
     private val kstDateProvider: KstDateProvider,
@@ -90,6 +96,14 @@ class AnswerService(
             )
         )
 
+        productEventRepository.save(
+            ProductEvent.createServerEvent(
+                anonymousKeyHash = authSession.anonymousKeyHash,
+                productEventName = ANSWER_SAVED,
+                now = now
+            )
+        )
+
         val activeAnswerCount = answerRepository.countByMemberId(memberId)
 
         return CreateAnswerResponse.of(
@@ -110,7 +124,17 @@ class AnswerService(
         val answer = answerRepository.findByIdAndMemberId(answerId, memberId)
             ?: throw RestApiException(ANSWER_NOT_FOUND)
 
-        answer.updateContent(request.content, clock.instant())
+        val now = clock.instant()
+
+        answer.updateContent(request.content, now)
+
+        productEventRepository.save(
+            ProductEvent.createServerEvent(
+                anonymousKeyHash = authSession.anonymousKeyHash,
+                productEventName = ANSWER_EDITED,
+                now = now
+            )
+        )
 
         val activeAnswerCount = answerRepository.countByMemberId(memberId)
 
@@ -132,6 +156,14 @@ class AnswerService(
             ?: throw RestApiException(ANSWER_NOT_FOUND)
 
         answerRepository.delete(answer)
+
+        productEventRepository.save(
+            ProductEvent.createServerEvent(
+                anonymousKeyHash = authSession.anonymousKeyHash,
+                productEventName = ANSWER_DELETED,
+                now = clock.instant()
+            )
+        )
 
         val activeAnswerCount = answerRepository.countByMemberId(memberId)
 

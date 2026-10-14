@@ -1,5 +1,10 @@
 package com.arca.member.service
 
+import com.arca.analytics.domain.ProductEventName.ALL_DATA_DELETED
+import com.arca.analytics.domain.ProductEventName.ONBOARDING_COMPLETED
+import com.arca.analytics.fixture.ProductEventFixture
+import com.arca.analytics.repository.ProductEventDailyCountRepository
+import com.arca.analytics.repository.ProductEventRepository
 import com.arca.answer.fixture.AnswerFixture
 import com.arca.answer.repository.AnswerRepository
 import com.arca.auth.domain.AuthSession
@@ -14,6 +19,7 @@ import com.arca.global.exception.domain.ExceptionCode.POLICY_VERSION_CHANGED
 import com.arca.global.exception.domain.ExceptionRecoveryKind.REFRESH_POLICIES
 import com.arca.global.exception.domain.RestApiException
 import com.arca.global.infra.IntegrationTest
+import com.arca.global.infra.KstDateProvider
 import com.arca.member.dto.request.CreateMemberRequest
 import com.arca.member.fixture.MemberFixture
 import com.arca.member.infra.FakeMemberCodeGenerator
@@ -41,6 +47,8 @@ import java.time.temporal.ChronoUnit.MICROS
 class MemberServiceTest(
     private val memberService: MemberService,
     private val memberRepository: MemberRepository,
+    private val productEventRepository: ProductEventRepository,
+    private val productEventDailyCountRepository: ProductEventDailyCountRepository,
     private val answerRepository: AnswerRepository,
     private val authSessionRepository: AuthSessionRepository,
     private val semaphoreRepository: SemaphoreRepository,
@@ -49,6 +57,7 @@ class MemberServiceTest(
     private val authSessionIssuer: AuthSessionIssuer,
     private val authSessionService: AuthSessionService,
     private val fakeMemberCodeGenerator: FakeMemberCodeGenerator,
+    private val kstDateProvider: KstDateProvider,
     private val entityManager: EntityManager
 ) {
 
@@ -91,6 +100,37 @@ class MemberServiceTest(
 
             //then
             assertThat(checkNotNull(sessionResponse.context.member).memberCode).isEqualTo(FREE_MEMBER_CODE)
+        }
+    }
+
+    @Nested
+    inner class 가입에_성공하면 {
+
+        @Test
+        fun 그_익명_키_주체로_onboarding_completed를_기록한다() {
+            //given
+            val before = Instant.now()
+
+            //when
+            memberService.createMember(guestSessionOf(ANONYMOUS_KEY_HASH), validRequest())
+
+            //then
+            val after = Instant.now()
+            val productEvent = productEventRepository.findAll().single()
+            assertThat(productEvent.productEventName).isEqualTo(ONBOARDING_COMPLETED)
+            assertThat(productEvent.anonymousKeyHash).isEqualTo(ANONYMOUS_KEY_HASH)
+            assertThat(productEvent.properties).isEmpty()
+            assertThat(productEvent.occurredAt).isBetween(before, after)
+            assertThat(productEvent.receivedAt).isEqualTo(productEvent.occurredAt)
+        }
+
+        @Test
+        fun 가입이_거절되면_기록하지_않는다() {
+            //when, then
+            assertThatThrownBy { memberService.createMember(guestSessionOf(ANONYMOUS_KEY_HASH), outdatedRequest()) }
+                .isInstanceOf(RestApiException::class.java)
+                .hasFieldOrPropertyWithValue("exceptionCode", POLICY_VERSION_CHANGED)
+            assertThat(productEventRepository.count()).isZero()
         }
     }
 
@@ -258,6 +298,72 @@ class MemberServiceTest(
         }
 
         @Test
+        fun 그_익명_키_주체의_원시_이벤트를_가입_전_이벤트까지_지운다() {
+            //given
+            productEventRepository.save(ProductEventFixture.createProductEvent(ANONYMOUS_KEY_HASH))
+            productEventRepository.save(ProductEventFixture.createProductEvent(OTHER_ANONYMOUS_KEY_HASH))
+            val activeSession = signUp(ANONYMOUS_KEY_HASH)
+            signUp(OTHER_ANONYMOUS_KEY_HASH)
+            flushAndClear()
+
+            //when
+            memberService.deleteMember(activeSession)
+            flushAndClear()
+
+            //then
+            assertThat(productEventRepository.findAll()).extracting<String> { it.anonymousKeyHash }
+                .hasSize(OTHER_SUBJECT_EVENT_COUNT)
+                .containsOnly(OTHER_ANONYMOUS_KEY_HASH)
+        }
+
+        @Test
+        fun 그날_all_data_deleted_집계를_회원마다_1씩_늘린다() {
+            //given
+            val activeSession = signUp(ANONYMOUS_KEY_HASH)
+            val otherActiveSession = signUp(OTHER_ANONYMOUS_KEY_HASH)
+            flushAndClear()
+
+            //when
+            memberService.deleteMember(activeSession)
+            memberService.deleteMember(otherActiveSession)
+            flushAndClear()
+
+            //then
+            val productEventDailyCount = productEventDailyCountRepository.findAll().single()
+            assertThat(productEventDailyCount.dateKst).isEqualTo(kstDateProvider.today())
+            assertThat(productEventDailyCount.productEventName).isEqualTo(ALL_DATA_DELETED)
+            assertThat(productEventDailyCount.totalCount).isEqualTo(2L)
+        }
+
+        @Test
+        fun all_data_deleted는_원시_이벤트로_남기지_않는다() {
+            //given
+            val activeSession = signUp(ANONYMOUS_KEY_HASH)
+            flushAndClear()
+
+            //when
+            memberService.deleteMember(activeSession)
+            flushAndClear()
+
+            //then
+            assertThat(productEventRepository.count()).isZero()
+            assertThat(productEventDailyCountRepository.count()).isEqualTo(1L)
+        }
+
+        @Test
+        fun 삭제가_거절되면_원시_이벤트와_집계가_그대로다() {
+            //given
+            productEventRepository.save(ProductEventFixture.createProductEvent(ANONYMOUS_KEY_HASH))
+
+            //when, then
+            assertThatThrownBy { memberService.deleteMember(guestSessionOf(ANONYMOUS_KEY_HASH)) }
+                .isInstanceOf(RestApiException::class.java)
+                .hasFieldOrPropertyWithValue("exceptionCode", MEMBER_NOT_FOUND)
+            assertThat(productEventRepository.count()).isEqualTo(1L)
+            assertThat(productEventDailyCountRepository.count()).isZero()
+        }
+
+        @Test
         fun GUEST_세션이면_MEMBER_NOT_FOUND() {
             //when, then
             assertThatThrownBy { memberService.deleteMember(guestSessionOf(ANONYMOUS_KEY_HASH)) }
@@ -366,6 +472,7 @@ class MemberServiceTest(
         private const val MEMBER_CODE_PATTERN = "^ARCA-[A-Z0-9]{5}$"
         private const val CONSENT_POLICY_COUNT = 2
         private const val ANSWER_COUNT_PER_MEMBER = 2L
+        private const val OTHER_SUBJECT_EVENT_COUNT = 2
         private val SEMAPHORE_DATE = LocalDate.parse("2026-10-01")
         private val ANSWER_DATES = listOf(LocalDate.parse("2026-10-01"), LocalDate.parse("2026-10-02"))
     }

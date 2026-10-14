@@ -1,5 +1,10 @@
 package com.arca.member.service
 
+import com.arca.analytics.domain.ProductEvent
+import com.arca.analytics.domain.ProductEventName.ALL_DATA_DELETED
+import com.arca.analytics.domain.ProductEventName.ONBOARDING_COMPLETED
+import com.arca.analytics.repository.ProductEventDailyCountRepository
+import com.arca.analytics.repository.ProductEventRepository
 import com.arca.answer.repository.AnswerRepository
 import com.arca.auth.domain.AuthSession
 import com.arca.auth.domain.SessionMode.ACTIVE
@@ -11,6 +16,7 @@ import com.arca.global.exception.domain.ExceptionCode.MEMBER_ALREADY_EXISTS
 import com.arca.global.exception.domain.ExceptionCode.MEMBER_NOT_FOUND
 import com.arca.global.exception.domain.ExceptionCode.SESSION_INVALID
 import com.arca.global.exception.domain.RestApiException
+import com.arca.global.infra.KstDateProvider
 import com.arca.member.domain.Member
 import com.arca.member.dto.request.CreateMemberRequest
 import com.arca.member.dto.request.UpdateNicknameRequest
@@ -32,6 +38,8 @@ import java.time.Instant
 @Service
 class MemberService(
     private val memberRepository: MemberRepository,
+    private val productEventRepository: ProductEventRepository,
+    private val productEventDailyCountRepository: ProductEventDailyCountRepository,
     private val answerRepository: AnswerRepository,
     private val authSessionRepository: AuthSessionRepository,
     private val termsAgreementRepository: TermsAgreementRepository,
@@ -39,6 +47,7 @@ class MemberService(
     private val authSessionIssuer: AuthSessionIssuer,
     private val memberCodeGenerator: MemberCodeGenerator,
     private val termsAgreementValidator: TermsAgreementValidator,
+    private val kstDateProvider: KstDateProvider,
     private val clock: Clock
 ) {
     @Transactional(readOnly = true)
@@ -62,6 +71,14 @@ class MemberService(
         val member = saveMember(
             anonymousKeyHash = authSession.anonymousKeyHash,
             createdAt = now
+        )
+
+        productEventRepository.save(
+            ProductEvent.createServerEvent(
+                anonymousKeyHash = member.anonymousKeyHash,
+                productEventName = ONBOARDING_COMPLETED,
+                now = now
+            )
         )
 
         termsAgreementRepository.saveAll(
@@ -117,6 +134,9 @@ class MemberService(
         val now = clock.instant()
 
         answerRepository.deleteAllByMemberId(memberId)
+
+        productEventRepository.deleteAllByAnonymousKeyHash(member.anonymousKeyHash)
+        productEventDailyCountRepository.increaseTotalCount(kstDateProvider.dateOf(now), ALL_DATA_DELETED.name)
 
         val termsAgreements = termsAgreementRepository.findAllByMemberId(memberId)
 
