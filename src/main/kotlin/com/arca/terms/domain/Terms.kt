@@ -1,12 +1,25 @@
 package com.arca.terms.domain
 
 enum class Terms(
-    val id: String,
-    val version: String,
-    val title: String,
+    val termsDocument: TermsDocument,
     val url: String,
     val required: Boolean
 ) {
-    TERMS_OF_SERVICE("terms-of-service", "1", "서비스 이용약관", "https://arca.invalid/policies/terms-of-service/1", true),
-    PRIVACY_POLICY("privacy-policy", "1", "개인정보처리방침", "https://arca.invalid/policies/privacy-policy/1", true)
+    TERMS_OF_SERVICE(TermsDocument.TERMS_OF_SERVICE_V1, "https://arca.invalid/policies/terms-of-service/1", true),
+    PRIVACY_POLICY(TermsDocument.PRIVACY_POLICY_V1, "https://arca.invalid/policies/privacy-policy/1", true);
+
+    val id: String
+        get() {
+            return termsDocument.policyId
+        }
+
+    val version: String
+        get() {
+            return termsDocument.version
+        }
+
+    val title: String
+        get() {
+            return termsDocument.title
+        }
 }
